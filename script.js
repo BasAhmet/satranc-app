@@ -19,8 +19,6 @@ const pieceSymbols = {
 
 let selectedSquare = null;
 let currentPlayer = 'white';
-
-// YENİ: Geçerken alma (En Passant) kuralı için son hamleyi hafızada tutuyoruz
 let lastMove = null; 
 
 function createBoard() {
@@ -75,6 +73,9 @@ function handleSquareClick(event) {
         } else if (pieceAtSquare && isPieceCurrentPlayers(pieceAtSquare)) {
             selectSquare(square, row, col);
         } else {
+            // YENİ: Kendi taşımızın üzerine hamle yapmayı en baştan engelliyoruz
+            if (pieceAtSquare !== '' && isPieceCurrentPlayers(pieceAtSquare)) return;
+
             if (isValidMove(selectedSquare.row, selectedSquare.col, row, col)) {
                 movePiece(row, col);
             } else {
@@ -106,18 +107,13 @@ function clearSelection() {
 function movePiece(targetRow, targetCol) {
     const pieceToMove = initialBoard[selectedSquare.row][selectedSquare.col];
     
-    // YENİ: Geçerken Alma (En Passant) durumunda yenilen piyonu tahtadan silme
     if (pieceToMove.toLowerCase() === 'p' && targetCol !== selectedSquare.col && initialBoard[targetRow][targetCol] === '') {
-        // Eğer piyon çapraz gittiyse ama hedef kare boşsa, bu bir En Passant hamlesidir.
-        // O halde yanımızdaki (hedef sütunundaki ve bizimle aynı satırdaki) rakip piyonu siliyoruz.
         initialBoard[selectedSquare.row][targetCol] = ''; 
     }
 
-    // Taşı yeni yerine koy ve eski yerini boşalt
     initialBoard[targetRow][targetCol] = pieceToMove;
     initialBoard[selectedSquare.row][selectedSquare.col] = '';
     
-    // YENİ: Hafızayı güncelle. Bu hamleyi "son hamle" olarak kaydet.
     lastMove = {
         piece: pieceToMove,
         startRow: selectedSquare.row,
@@ -146,19 +142,18 @@ function isValidMove(startRow, startCol, targetRow, targetCol) {
 
     if (startRow === targetRow && startCol === targetCol) return false;
 
+    // YENİ: Tüm taşların fonksiyonları aktif edildi
     switch (type) {
         case 'p': return validatePawnMove(startRow, startCol, targetRow, targetCol, piece);
         case 'r': return validateRookMove(startRow, startCol, targetRow, targetCol);
-        case 'b': return validateBishopMove(startRow, startCol, targetRow, targetCol); // YENİ: Fil kuralı eklendi
-        case 'n':
-        case 'q':
-        case 'k':
-            return true; 
+        case 'b': return validateBishopMove(startRow, startCol, targetRow, targetCol);
+        case 'n': return validateKnightMove(startRow, startCol, targetRow, targetCol);
+        case 'q': return validateQueenMove(startRow, startCol, targetRow, targetCol);
+        case 'k': return validateKingMove(startRow, startCol, targetRow, targetCol);
         default: return false;
     }
 }
 
-// 1. Piyon Hareketi (En Passant Eklendi)
 function validatePawnMove(startRow, startCol, targetRow, targetCol, piece) {
     const isWhite = piece === piece.toUpperCase();
     const direction = isWhite ? -1 : 1; 
@@ -168,7 +163,6 @@ function validatePawnMove(startRow, startCol, targetRow, targetCol, piece) {
     const colDiff = targetCol - startCol;
     const targetPiece = initialBoard[targetRow][targetCol];
 
-    // Düz İlerleme
     if (colDiff === 0 && targetPiece === '') {
         if (rowDiff === direction) return true;
         if (startRow === startRowLimit && rowDiff === 2 * direction) {
@@ -176,14 +170,9 @@ function validatePawnMove(startRow, startCol, targetRow, targetCol, piece) {
             if (initialBoard[intermediateRow][startCol] === '') return true;
         }
     }
-    // Normal Çapraz Taş Alma
-    if (Math.abs(colDiff) === 1 && rowDiff === direction && targetPiece !== '') {
-        return true; 
-    }
+    if (Math.abs(colDiff) === 1 && rowDiff === direction && targetPiece !== '') return true; 
     
-    // YENİ: Geçerken Alma (En Passant) Mantığı
     if (Math.abs(colDiff) === 1 && rowDiff === direction && targetPiece === '') {
-        // Eğer son hamlede bir piyon 2 kare ilerlediyse ve bizim piyonumuzla yan yana geldiyse
         if (lastMove && lastMove.piece.toLowerCase() === 'p') {
             if (Math.abs(lastMove.startRow - lastMove.targetRow) === 2) {
                 if (lastMove.targetRow === startRow && lastMove.targetCol === targetCol) {
@@ -192,11 +181,9 @@ function validatePawnMove(startRow, startCol, targetRow, targetCol, piece) {
             }
         }
     }
-
     return false;
 }
 
-// 2. Kale Hareketi
 function validateRookMove(startRow, startCol, targetRow, targetCol) {
     if (startRow !== targetRow && startCol !== targetCol) return false;
 
@@ -214,9 +201,7 @@ function validateRookMove(startRow, startCol, targetRow, targetCol) {
     return true;
 }
 
-// 3. YENİ: Fil (Bishop) Hareketi
 function validateBishopMove(startRow, startCol, targetRow, targetCol) {
-    // Filin çapraz gitmesi için satır ve sütun değişim miktarı mutlak değerce eşit olmalıdır
     if (Math.abs(startRow - targetRow) !== Math.abs(startCol - targetCol)) return false;
 
     const rowStep = targetRow > startRow ? 1 : -1;
@@ -225,16 +210,33 @@ function validateBishopMove(startRow, startCol, targetRow, targetCol) {
     let currentRow = startRow + rowStep;
     let currentCol = startCol + colStep;
 
-    // Hedef kareye kadar yol üstündeki tüm karelerin boş olup olmadığını kontrol et
     while (currentRow !== targetRow && currentCol !== targetCol) {
-        if (initialBoard[currentRow][currentCol] !== '') {
-            return false; // Yol üstünde taş varsa atlayamaz
-        }
+        if (initialBoard[currentRow][currentCol] !== '') return false;
         currentRow += rowStep;
         currentCol += colStep;
     }
-
     return true;
+}
+
+// 4. YENİ: At Hareketi
+function validateKnightMove(startRow, startCol, targetRow, targetCol) {
+    const rowDiff = Math.abs(startRow - targetRow);
+    const colDiff = Math.abs(startCol - targetCol);
+    return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+}
+
+// 5. YENİ: Vezir Hareketi
+function validateQueenMove(startRow, startCol, targetRow, targetCol) {
+    // Vezir = Kale + Fil kombinasyonudur
+    return validateRookMove(startRow, startCol, targetRow, targetCol) || 
+           validateBishopMove(startRow, startCol, targetRow, targetCol);
+}
+
+// 6. YENİ: Şah Hareketi (Rok hariç temel hareket)
+function validateKingMove(startRow, startCol, targetRow, targetCol) {
+    const rowDiff = Math.abs(startRow - targetRow);
+    const colDiff = Math.abs(startCol - targetCol);
+    return rowDiff <= 1 && colDiff <= 1;
 }
 
 createBoard();
