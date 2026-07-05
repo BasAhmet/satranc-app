@@ -23,37 +23,55 @@ let currentPlayer = 'white';
 let lastMove = null; 
 
 function createBoard() {
-    boardContainer.innerHTML = ''; 
-    boardContainer.className = 'grid grid-cols-8 grid-rows-8 w-80 h-80 sm:w-96 sm:h-96 border-4 border-slate-800 mx-auto shadow-lg rounded-sm overflow-hidden select-none';
-
+    boardContainer.innerHTML = '';
+    
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
             const square = document.createElement('div');
-            const isLight = (row + col) % 2 === 0;
-            const bgColor = isLight ? 'bg-slate-200' : 'bg-slate-500';
             
-            square.className = `w-full h-full flex items-center justify-center text-4xl sm:text-5xl cursor-pointer ${bgColor}`;
-            square.dataset.row = row;
-            square.dataset.col = col;
+            // Açık kare mi koyu kare mi olduğunu belirliyoruz (bunu zaten yapıyorsundur)
+            const isLightSquare = (row + col) % 2 === 0;
+            
+            // Kendi mevcut class atamalarını buraya koy (örn: bg-slate-300 vb.)
+            // ... (KENDİ KODUN) ...
+            
+            // ÖNEMLİ: İçindeki yazıları köşelere yaslayabilmek için karenin 'relative' olması şart!
+            square.classList.add('relative'); 
+            
+            // ... (Varsa taş ekleme kodların) ...
 
-            square.addEventListener('click', handleSquareClick);
+            // ==========================================
+            // YENİ: NOTASYON KOORDİNATLARINI YAZDIRMA
+            // ==========================================
+            
+            // Sütun Harfleri (a-h) -> Sadece en alt satırda (row === 7)
+            if (row === 7) {
+                const fileLabel = document.createElement('span');
+                fileLabel.textContent = String.fromCharCode(97 + col); // 0->a, 1->b
+                
+                // Zemin rengine göre zıt renk seçimi ve tıklanmayı engellemek için select-none
+                const textColor = isLightSquare ? 'text-slate-600' : 'text-slate-300';
+                fileLabel.className = `absolute bottom-0.5 left-1 text-[10px] font-bold select-none ${textColor}`;
+                
+                square.appendChild(fileLabel);
+            }
 
-            const piece = initialBoard[row][col];
-            if (piece) {
-                const symbol = pieceSymbols[piece];
-                const pieceElement = document.createElement('span');
-                pieceElement.textContent = symbol;
-                pieceElement.style.fontFamily = "'Segoe UI Symbol', 'Arial Unicode MS', sans-serif";
-                pieceElement.className = 'text-slate-900 drop-shadow-sm';
-                square.appendChild(pieceElement);
+            // Satır Sayıları (1-8) -> Sadece en sağ sütunda (col === 7)
+            if (col === 7) {
+                const rankLabel = document.createElement('span');
+                rankLabel.textContent = 8 - row; // 0->8, 7->1
+                
+                const textColor = isLightSquare ? 'text-slate-600' : 'text-slate-300';
+                rankLabel.className = `absolute top-0.5 right-1 text-[10px] font-bold select-none ${textColor}`;
+                
+                square.appendChild(rankLabel);
             }
-            if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) {
-                square.classList.add('bg-yellow-200/60');
-            }
+
+            // ... (Tıklama olayları vs.) ...
+
             boardContainer.appendChild(square);
         }
     }
-    updateTurnIndicator();
 }
 // ... Diğer kodların üst kısımları aynı kalıyor ...
 function handleSquareClick(event) {
