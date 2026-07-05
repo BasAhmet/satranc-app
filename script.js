@@ -11,10 +11,10 @@ const initialBoard = [
     ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
 ];
 
-// ÇÖZÜM: Beyaz taşlar (Büyük harf) için içi boş, Siyah taşlar için içi dolu semboller.
+// \uFE0E kodu, tarayıcının bu karakterleri emoji yerine düz metin olarak işlemesini zorlar
 const pieceSymbols = {
-    'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
-    'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
+    'r': '♜\uFE0E', 'n': '♞\uFE0E', 'b': '♝\uFE0E', 'q': '♛\uFE0E', 'k': '♚\uFE0E', 'p': '♟\uFE0E',
+    'R': '♖\uFE0E', 'N': '♘\uFE0E', 'B': '♗\uFE0E', 'Q': '♕\uFE0E', 'K': '♔\uFE0E', 'P': '♙\uFE0E'
 };
 
 function createBoard() {
@@ -26,7 +26,6 @@ function createBoard() {
             const square = document.createElement('div');
             const isLight = (row + col) % 2 === 0;
             
-            // Tahta renklerini daha yumuşak ve kontrastlı slate tonlarına çektik
             const bgColor = isLight ? 'bg-slate-200' : 'bg-slate-500';
             
             square.className = `w-full h-full flex items-center justify-center text-4xl sm:text-5xl cursor-pointer ${bgColor}`;
@@ -36,14 +35,13 @@ function createBoard() {
             const piece = initialBoard[row][col];
             
             if (piece) {
-                // Taşı doğrudan sözlükten çekiyoruz
                 const symbol = pieceSymbols[piece];
                 
                 const pieceElement = document.createElement('span');
                 pieceElement.textContent = symbol;
                 
-                // Artık karakterin kendi çizgileri rengi belirlediği için,
-                // tüm taşlara koyu gri bir renk ve hafif gölge veriyoruz.
+                // Emoji fontlarının devreye girmemesi için font ailesini sistemin temel sembol fontlarına sabitliyoruz
+                pieceElement.style.fontFamily = "'Segoe UI Symbol', 'Arial Unicode MS', sans-serif";
                 pieceElement.className = 'text-slate-900 drop-shadow-sm';
                 
                 square.appendChild(pieceElement);
