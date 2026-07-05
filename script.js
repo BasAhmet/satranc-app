@@ -20,6 +20,9 @@ const pieceSymbols = {
 let selectedSquare = null;
 let currentPlayer = 'white';
 
+// YENİ: Geçerken alma (En Passant) kuralı için son hamleyi hafızada tutuyoruz
+let lastMove = null; 
+
 function createBoard() {
     boardContainer.innerHTML = ''; 
     boardContainer.className = 'grid grid-cols-8 grid-rows-8 w-80 h-80 sm:w-96 sm:h-96 border-4 border-slate-800 mx-auto shadow-lg rounded-sm overflow-hidden select-none';
@@ -72,11 +75,9 @@ function handleSquareClick(event) {
         } else if (pieceAtSquare && isPieceCurrentPlayers(pieceAtSquare)) {
             selectSquare(square, row, col);
         } else {
-            // YENİ: Hamle yapılmadan önce kurallara uygun mu diye kontrol ediyoruz
             if (isValidMove(selectedSquare.row, selectedSquare.col, row, col)) {
                 movePiece(row, col);
             } else {
-                // Kurallara uymuyorsa seçimi hafifçe sarsabilir veya sadece kaldırabiliriz
                 clearSelection();
             }
         }
@@ -104,9 +105,27 @@ function clearSelection() {
 
 function movePiece(targetRow, targetCol) {
     const pieceToMove = initialBoard[selectedSquare.row][selectedSquare.col];
+    
+    // YENİ: Geçerken Alma (En Passant) durumunda yenilen piyonu tahtadan silme
+    if (pieceToMove.toLowerCase() === 'p' && targetCol !== selectedSquare.col && initialBoard[targetRow][targetCol] === '') {
+        // Eğer piyon çapraz gittiyse ama hedef kare boşsa, bu bir En Passant hamlesidir.
+        // O halde yanımızdaki (hedef sütunundaki ve bizimle aynı satırdaki) rakip piyonu siliyoruz.
+        initialBoard[selectedSquare.row][targetCol] = ''; 
+    }
+
+    // Taşı yeni yerine koy ve eski yerini boşalt
     initialBoard[targetRow][targetCol] = pieceToMove;
     initialBoard[selectedSquare.row][selectedSquare.col] = '';
     
+    // YENİ: Hafızayı güncelle. Bu hamleyi "son hamle" olarak kaydet.
+    lastMove = {
+        piece: pieceToMove,
+        startRow: selectedSquare.row,
+        startCol: selectedSquare.col,
+        targetRow: targetRow,
+        targetCol: targetCol
+    };
+
     clearSelection();
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
     createBoard();
@@ -125,16 +144,13 @@ function isValidMove(startRow, startCol, targetRow, targetCol) {
     const piece = initialBoard[startRow][startCol];
     const type = piece.toLowerCase();
 
-    // Genel kural: Aynı yere hamle yapılamaz (zaten yukarda eleniyor ama mantıkta dursun)
     if (startRow === targetRow && startCol === targetCol) return false;
 
-    // Taş türlerine göre doğrulama fonksiyonlarını çağırıyoruz
     switch (type) {
         case 'p': return validatePawnMove(startRow, startCol, targetRow, targetCol, piece);
         case 'r': return validateRookMove(startRow, startCol, targetRow, targetCol);
-        // Diğer taşlar şimdilik serbest (true dönüyor), kurallarını sırayla ekleyeceğiz
+        case 'b': return validateBishopMove(startRow, startCol, targetRow, targetCol); // YENİ: Fil kuralı eklendi
         case 'n':
-        case 'b':
         case 'q':
         case 'k':
             return true; 
@@ -142,37 +158,46 @@ function isValidMove(startRow, startCol, targetRow, targetCol) {
     }
 }
 
-// 1. Piyon Hareketi Algoritması
+// 1. Piyon Hareketi (En Passant Eklendi)
 function validatePawnMove(startRow, startCol, targetRow, targetCol, piece) {
     const isWhite = piece === piece.toUpperCase();
-    const direction = isWhite ? -1 : 1; // Beyaz yukarı (-1 satır), Siyah aşağı (+1 satır) gider
-    const startRowLimit = isWhite ? 6 : 1; // İlk hamle kontrolü için başlangıç satırları
+    const direction = isWhite ? -1 : 1; 
+    const startRowLimit = isWhite ? 6 : 1; 
 
     const rowDiff = targetRow - startRow;
     const colDiff = targetCol - startCol;
     const targetPiece = initialBoard[targetRow][targetCol];
 
-    // Düz İlerleme (Aynı sütun, hedef kare boş olmalı)
+    // Düz İlerleme
     if (colDiff === 0 && targetPiece === '') {
-        // 1 kare ileri
         if (rowDiff === direction) return true;
-        // İlk hamlede 2 kare ileri (Yol üstündeki karenin de boş olması gerekir)
         if (startRow === startRowLimit && rowDiff === 2 * direction) {
             const intermediateRow = startRow + direction;
             if (initialBoard[intermediateRow][startCol] === '') return true;
         }
     }
-    // Çapraz Taş Alma (1 kare çapraz ve hedefte rakip taş olmalı)
+    // Normal Çapraz Taş Alma
     if (Math.abs(colDiff) === 1 && rowDiff === direction && targetPiece !== '') {
         return true; 
+    }
+    
+    // YENİ: Geçerken Alma (En Passant) Mantığı
+    if (Math.abs(colDiff) === 1 && rowDiff === direction && targetPiece === '') {
+        // Eğer son hamlede bir piyon 2 kare ilerlediyse ve bizim piyonumuzla yan yana geldiyse
+        if (lastMove && lastMove.piece.toLowerCase() === 'p') {
+            if (Math.abs(lastMove.startRow - lastMove.targetRow) === 2) {
+                if (lastMove.targetRow === startRow && lastMove.targetCol === targetCol) {
+                    return true;
+                }
+            }
+        }
     }
 
     return false;
 }
 
-// 2. Kale Hareketi Algoritması
+// 2. Kale Hareketi
 function validateRookMove(startRow, startCol, targetRow, targetCol) {
-    // Kale ya aynı satırda ya aynı sütunda hareket etmelidir
     if (startRow !== targetRow && startCol !== targetCol) return false;
 
     const rowStep = targetRow === startRow ? 0 : (targetRow > startRow ? 1 : -1);
@@ -181,10 +206,29 @@ function validateRookMove(startRow, startCol, targetRow, targetCol) {
     let currentRow = startRow + rowStep;
     let currentCol = startCol + colStep;
 
-    // Hedef kareye kadar olan yol üstündeki tüm karelerin boş olup olmadığını kontrol et
     while (currentRow !== targetRow || currentCol !== targetCol) {
+        if (initialBoard[currentRow][currentCol] !== '') return false;
+        currentRow += rowStep;
+        currentCol += colStep;
+    }
+    return true;
+}
+
+// 3. YENİ: Fil (Bishop) Hareketi
+function validateBishopMove(startRow, startCol, targetRow, targetCol) {
+    // Filin çapraz gitmesi için satır ve sütun değişim miktarı mutlak değerce eşit olmalıdır
+    if (Math.abs(startRow - targetRow) !== Math.abs(startCol - targetCol)) return false;
+
+    const rowStep = targetRow > startRow ? 1 : -1;
+    const colStep = targetCol > startCol ? 1 : -1;
+
+    let currentRow = startRow + rowStep;
+    let currentCol = startCol + colStep;
+
+    // Hedef kareye kadar yol üstündeki tüm karelerin boş olup olmadığını kontrol et
+    while (currentRow !== targetRow && currentCol !== targetCol) {
         if (initialBoard[currentRow][currentCol] !== '') {
-            return false; // Yol üstünde taş varsa kale zıplayamaz
+            return false; // Yol üstünde taş varsa atlayamaz
         }
         currentRow += rowStep;
         currentCol += colStep;
