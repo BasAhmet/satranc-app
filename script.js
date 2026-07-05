@@ -29,41 +29,57 @@ function createBoard() {
         for (let col = 0; col < 8; col++) {
             const square = document.createElement('div');
             
-            square.classList.add('relative');            
-            // Açık kare mi koyu kare mi olduğunu belirliyoruz (bunu zaten yapıyorsundur)
+            // 1. Zemin Rengi (Görselindeki tonlara uygun Tailwind class'ları)
             const isLightSquare = (row + col) % 2 === 0;
+            const bgColor = isLightSquare ? 'bg-slate-200' : 'bg-slate-500';
             
-            // Kendi mevcut class atamalarını buraya koy (örn: bg-slate-300 vb.)
-            // ... (KENDİ KODUN) ...
+            // 2. Karenin Temel Sınıfları (Boyut, esneklik ve 'relative' şartı)
+            // Eğer tahta boyutlarında kayma olursa w-12 h-12 gibi değerleri kendine göre ayarlayabilirsin.
+            square.className = `w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 flex justify-center items-center relative ${bgColor}`;
             
-            // ÖNEMLİ: İçindeki yazıları köşelere yaslayabilmek için karenin 'relative' olması şart!
-            square.classList.add('relative'); 
+            // 3. Tıklama Olayı
+            square.addEventListener('click', () => handleSquareClick(row, col));
             
-            // ... (Varsa taş ekleme kodların) ...
+            // 4. Taşları Yerleştirme
+            const piece = initialBoard[row][col];
+            if (piece !== '') {
+                const pieceElement = document.createElement('img');
+                
+                // DİKKAT: Taş görsellerinin yolunu kendi projene göre düzenle!
+                // Örneğin resimlerin "img" klasöründeyse: `img/${piece}.png` yapmalısın.
+                pieceElement.src = `images/${piece}.png`; 
+                
+                pieceElement.className = 'w-4/5 h-4/5 cursor-pointer select-none';
+                square.appendChild(pieceElement);
+            }
+
+            // 5. Seçili Kare Vurgusu (Tıklanan kareyi sarı vb. yapmak için)
+            if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) {
+                square.classList.remove(bgColor);
+                square.classList.add('bg-yellow-400'); 
+            }
 
             // ==========================================
-            // YENİ: NOTASYON KOORDİNATLARINI YAZDIRMA
+            // NOTASYON KOORDİNATLARINI YAZDIRMA
             // ==========================================
             
-            // Sütun Harfleri (a-h) -> Sadece en alt satırda (row === 7)
+            // Sütun Harfleri (a-h)
             if (row === 7) {
                 const fileLabel = document.createElement('span');
-                fileLabel.textContent = String.fromCharCode(97 + col);
-                const textColor = (row + col) % 2 === 0 ? 'text-slate-600' : 'text-slate-300';
-                fileLabel.className = `absolute bottom-0.5 left-1 text-[10px] font-bold select-none ${textColor}`;
+                fileLabel.textContent = String.fromCharCode(97 + col); 
+                const textColor = isLightSquare ? 'text-slate-500' : 'text-slate-200';
+                fileLabel.className = `absolute bottom-0 left-1 text-[10px] font-bold select-none ${textColor}`;
                 square.appendChild(fileLabel);
             }
-            
+
             // Satır Sayıları (1-8)
             if (col === 7) {
                 const rankLabel = document.createElement('span');
-                rankLabel.textContent = 8 - row;
-                const textColor = (row + col) % 2 === 0 ? 'text-slate-600' : 'text-slate-300';
-                rankLabel.className = `absolute top-0.5 right-1 text-[10px] font-bold select-none ${textColor}`;
+                rankLabel.textContent = 8 - row; 
+                const textColor = isLightSquare ? 'text-slate-500' : 'text-slate-200';
+                rankLabel.className = `absolute top-0 right-1 text-[10px] font-bold select-none ${textColor}`;
                 square.appendChild(rankLabel);
             }
-
-            // ... (Tıklama olayları vs.) ...
 
             boardContainer.appendChild(square);
         }
