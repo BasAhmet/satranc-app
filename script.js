@@ -98,24 +98,44 @@ function clearSelection() {
 function movePiece(targetRow, targetCol) {
     const pieceToMove = initialBoard[selectedSquare.row][selectedSquare.col];
     
-    // YENİ: Rok (Castling) Hamlesi gerçekleştiyse Kaleyi de taşı
+    // Rok (Castling) Hamlesi gerçekleştiyse Kaleyi de taşı
     if (pieceToMove.toLowerCase() === 'k' && Math.abs(targetCol - selectedSquare.col) === 2) {
-        const isKingside = targetCol > selectedSquare.col; // Şah kanadı mı?
+        const isKingside = targetCol > selectedSquare.col;
         const rookCol = isKingside ? 7 : 0;
         const newRookCol = isKingside ? 5 : 3;
         
         initialBoard[targetRow][newRookCol] = initialBoard[targetRow][rookCol];
         initialBoard[targetRow][rookCol] = '';
     }
-    // Piyon En Passant ve diğerleri... (Aynı)
+
+    // Piyon En Passant
     if (pieceToMove.toLowerCase() === 'p' && targetCol !== selectedSquare.col && initialBoard[targetRow][targetCol] === '') {
         initialBoard[selectedSquare.row][targetCol] = ''; 
     }
 
+    // Taşı yeni yerine koy ve eski yerini boşalt
     initialBoard[targetRow][targetCol] = pieceToMove;
     initialBoard[selectedSquare.row][selectedSquare.col] = '';
     
-    lastMove = { piece: pieceToMove, startRow: selectedSquare.row, startCol: selectedSquare.col, targetRow: targetRow, targetCol: targetCol };
+    // ==========================================
+    // YENİ: Piyon Terfisi (Promotion) Mantığı
+    // ==========================================
+    if (pieceToMove === 'P' && targetRow === 0) {
+        // Beyaz piyon en üst satıra ulaştı, beyaz vezir (Q) yap
+        initialBoard[targetRow][targetCol] = 'Q';
+    } else if (pieceToMove === 'p' && targetRow === 7) {
+        // Siyah piyon en alt satıra ulaştı, siyah vezir (q) yap
+        initialBoard[targetRow][targetCol] = 'q';
+    }
+
+    // Son hamleyi hafızaya kaydet
+    lastMove = { 
+        piece: pieceToMove, 
+        startRow: selectedSquare.row, 
+        startCol: selectedSquare.col, 
+        targetRow: targetRow, 
+        targetCol: targetCol 
+    };
 
     clearSelection();
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
