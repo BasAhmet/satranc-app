@@ -1,5 +1,8 @@
 const boardContainer = document.getElementById('board-container');
 const turnIndicator = document.getElementById('turn-indicator');
+const moveHistoryContainer = document.getElementById('move-history');
+let moveNumber = 1;
+let currentMoveRow = null; // Hamleleri 1. [Beyaz] [Siyah] şeklinde yan yana yazmak için
 
 const initialBoard = [
     ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
@@ -199,6 +202,8 @@ function movePiece(targetRow, targetCol) {
         targetRow: targetRow, 
         targetCol: targetCol 
     };
+    // YENİ: Hamleyi panele kaydet (Sıra karşıya geçmeden HEMEN ÖNCE)
+    recordMove(pieceToMove, targetRow, targetCol);
 
     clearSelection();
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
@@ -392,5 +397,60 @@ function hasAnyValidMove(color) {
     }
     // Tüm taşların tüm ihtimallerini denedik, kurtuluş yok!
     return false; 
+}
+// =========================================================================
+// YENİ: HAMLE GEÇMİŞİ VE NOTASYON MOTORU
+// =========================================================================
+
+function getAlgebraicNotation(row, col) {
+    const file = String.fromCharCode(97 + col); // 0 -> 'a', 1 -> 'b' vb.
+    const rank = 8 - row; // 0 -> 8, 7 -> 1
+    return file + rank;
+}
+
+function recordMove(piece, targetRow, targetCol) {
+    const notation = getAlgebraicNotation(targetRow, targetCol);
+    // Piyonlar için sembol kullanılmaz, sadece koordinat yazılır. Diğer taşlar sembolleriyle yazılır.
+    const pieceSymbol = piece.toLowerCase() === 'p' ? '' : pieceSymbols[piece]; 
+    const moveText = pieceSymbol + notation;
+
+    if (currentPlayer === 'white') {
+        // Beyazın hamlesi: Yeni bir satır oluştur
+        currentMoveRow = document.createElement('div');
+        currentMoveRow.className = 'flex justify-between border-b border-slate-200 pb-1 mb-1';
+        
+        const moveNumSpan = document.createElement('span');
+        moveNumSpan.className = 'text-slate-400 w-8';
+        moveNumSpan.textContent = moveNumber + '.';
+
+        const whiteMoveSpan = document.createElement('span');
+        whiteMoveSpan.className = 'w-20 font-medium text-left';
+        whiteMoveSpan.textContent = moveText;
+
+        // Geçici olarak siyahın hamlesi gelene kadar boş bir alan bırak
+        const blackMovePlaceholder = document.createElement('span');
+        blackMovePlaceholder.className = 'w-20 text-right black-move-placeholder';
+
+        currentMoveRow.appendChild(moveNumSpan);
+        currentMoveRow.appendChild(whiteMoveSpan);
+        currentMoveRow.appendChild(blackMovePlaceholder);
+        
+        moveHistoryContainer.appendChild(currentMoveRow);
+        
+    } else {
+        // Siyahın hamlesi: Mevcut satırdaki boşluğu doldur
+        if (currentMoveRow) {
+            const blackPlaceholder = currentMoveRow.querySelector('.black-move-placeholder');
+            if (blackPlaceholder) {
+                blackPlaceholder.classList.remove('black-move-placeholder');
+                blackPlaceholder.classList.add('font-medium');
+                blackPlaceholder.textContent = moveText;
+            }
+        }
+        moveNumber++; // Bir sonraki tam hamleye geç
+    }
+    
+    // Panel doldukça otomatik olarak en aşağı kaydır
+    moveHistoryContainer.scrollTop = moveHistoryContainer.scrollHeight;
 }
 createBoard();
