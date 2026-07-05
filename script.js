@@ -29,6 +29,7 @@ function createBoard() {
         for (let col = 0; col < 8; col++) {
             const square = document.createElement('div');
             
+            square.classList.add('relative');            
             // Açık kare mi koyu kare mi olduğunu belirliyoruz (bunu zaten yapıyorsundur)
             const isLightSquare = (row + col) % 2 === 0;
             
@@ -47,23 +48,18 @@ function createBoard() {
             // Sütun Harfleri (a-h) -> Sadece en alt satırda (row === 7)
             if (row === 7) {
                 const fileLabel = document.createElement('span');
-                fileLabel.textContent = String.fromCharCode(97 + col); // 0->a, 1->b
-                
-                // Zemin rengine göre zıt renk seçimi ve tıklanmayı engellemek için select-none
-                const textColor = isLightSquare ? 'text-slate-600' : 'text-slate-300';
+                fileLabel.textContent = String.fromCharCode(97 + col);
+                const textColor = (row + col) % 2 === 0 ? 'text-slate-600' : 'text-slate-300';
                 fileLabel.className = `absolute bottom-0.5 left-1 text-[10px] font-bold select-none ${textColor}`;
-                
                 square.appendChild(fileLabel);
             }
-
-            // Satır Sayıları (1-8) -> Sadece en sağ sütunda (col === 7)
+            
+            // Satır Sayıları (1-8)
             if (col === 7) {
                 const rankLabel = document.createElement('span');
-                rankLabel.textContent = 8 - row; // 0->8, 7->1
-                
-                const textColor = isLightSquare ? 'text-slate-600' : 'text-slate-300';
+                rankLabel.textContent = 8 - row;
+                const textColor = (row + col) % 2 === 0 ? 'text-slate-600' : 'text-slate-300';
                 rankLabel.className = `absolute top-0.5 right-1 text-[10px] font-bold select-none ${textColor}`;
-                
                 square.appendChild(rankLabel);
             }
 
