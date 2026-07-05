@@ -11,12 +11,10 @@ const initialBoard = [
     ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
     ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
 ];
-
 const pieceSymbols = {
     'r': '♜\uFE0E', 'n': '♞\uFE0E', 'b': '♝\uFE0E', 'q': '♛\uFE0E', 'k': '♚\uFE0E', 'p': '♟\uFE0E',
     'R': '♖\uFE0E', 'N': '♘\uFE0E', 'B': '♗\uFE0E', 'Q': '♕\uFE0E', 'K': '♔\uFE0E', 'P': '♙\uFE0E'
 };
-
 let selectedSquare = null;
 let currentPlayer = 'white';
 let lastMove = null; 
@@ -46,17 +44,14 @@ function createBoard() {
                 pieceElement.className = 'text-slate-900 drop-shadow-sm';
                 square.appendChild(pieceElement);
             }
-
             if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) {
                 square.classList.add('bg-yellow-200/60');
             }
-
             boardContainer.appendChild(square);
         }
     }
     updateTurnIndicator();
 }
-
 function handleSquareClick(event) {
     const square = event.currentTarget;
     const row = parseInt(square.dataset.row);
@@ -84,18 +79,15 @@ function handleSquareClick(event) {
         }
     }
 }
-
 function isPieceCurrentPlayers(piece) {
     const isWhite = piece === piece.toUpperCase();
     return (currentPlayer === 'white' && isWhite) || (currentPlayer === 'black' && !isWhite);
 }
-
 function selectSquare(square, row, col) {
     clearSelection();
     selectedSquare = { row, col };
     square.classList.add('bg-yellow-200/60');
 }
-
 function clearSelection() {
     if (selectedSquare) {
         const allSquares = boardContainer.querySelectorAll('div');
@@ -103,31 +95,6 @@ function clearSelection() {
         selectedSquare = null;
     }
 }
-
-//function movePiece(targetRow, targetCol) {
-//    const pieceToMove = initialBoard[selectedSquare.row][selectedSquare.col];
-//    
-//    if (pieceToMove.toLowerCase() === 'p' && targetCol !== selectedSquare.col && initialBoard[targetRow][targetCol] === '') {
-//        initialBoard[selectedSquare.row][targetCol] = ''; 
-//    }
-//
-//    initialBoard[targetRow][targetCol] = pieceToMove;
-//    initialBoard[selectedSquare.row][selectedSquare.col] = '';
-//    
-//    lastMove = {
-//        piece: pieceToMove,
-//        startRow: selectedSquare.row,
-//        startCol: selectedSquare.col,
-//        targetRow: targetRow,
-//        targetCol: targetCol
-//    };
-//
-//    clearSelection();
-//    currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-//    createBoard();
-//}
-// ... (Diğer kodlar aynı kalıyor, sadece aşağıdaki fonksiyonları güncelle)
-
 function movePiece(targetRow, targetCol) {
     const pieceToMove = initialBoard[selectedSquare.row][selectedSquare.col];
     
@@ -140,7 +107,6 @@ function movePiece(targetRow, targetCol) {
         initialBoard[targetRow][newRookCol] = initialBoard[targetRow][rookCol];
         initialBoard[targetRow][rookCol] = '';
     }
-
     // Piyon En Passant ve diğerleri... (Aynı)
     if (pieceToMove.toLowerCase() === 'p' && targetCol !== selectedSquare.col && initialBoard[targetRow][targetCol] === '') {
         initialBoard[selectedSquare.row][targetCol] = ''; 
@@ -155,7 +121,6 @@ function movePiece(targetRow, targetCol) {
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
     createBoard();
 }
-
 // Şah hareketi içine Rok mantığını ekliyoruz
 function validateKingMove(startRow, startCol, targetRow, targetCol) {
     const rowDiff = Math.abs(startRow - targetRow);
@@ -184,16 +149,13 @@ function validateKingMove(startRow, startCol, targetRow, targetCol) {
     }
     return false;
 }
-
 function updateTurnIndicator() {
     const turnText = currentPlayer === 'white' ? 'Beyaz' : 'Siyah';
     turnIndicator.innerHTML = `Sıra: <span class="text-slate-800">${turnText}</span>`;
 }
-
 // =========================================================================
 // MANTIK MOTORU: HAMLE DOĞRULAMA ALGORİTMALARI
 // =========================================================================
-
 function isValidMove(startRow, startCol, targetRow, targetCol) {
     const piece = initialBoard[startRow][startCol];
     const type = piece.toLowerCase();
@@ -211,7 +173,6 @@ function isValidMove(startRow, startCol, targetRow, targetCol) {
         default: return false;
     }
 }
-
 function validatePawnMove(startRow, startCol, targetRow, targetCol, piece) {
     const isWhite = piece === piece.toUpperCase();
     const direction = isWhite ? -1 : 1; 
@@ -241,7 +202,6 @@ function validatePawnMove(startRow, startCol, targetRow, targetCol, piece) {
     }
     return false;
 }
-
 function validateRookMove(startRow, startCol, targetRow, targetCol) {
     if (startRow !== targetRow && startCol !== targetCol) return false;
 
@@ -258,7 +218,6 @@ function validateRookMove(startRow, startCol, targetRow, targetCol) {
     }
     return true;
 }
-
 function validateBishopMove(startRow, startCol, targetRow, targetCol) {
     if (Math.abs(startRow - targetRow) !== Math.abs(startCol - targetCol)) return false;
 
@@ -275,26 +234,22 @@ function validateBishopMove(startRow, startCol, targetRow, targetCol) {
     }
     return true;
 }
-
 // 4. YENİ: At Hareketi
 function validateKnightMove(startRow, startCol, targetRow, targetCol) {
     const rowDiff = Math.abs(startRow - targetRow);
     const colDiff = Math.abs(startCol - targetCol);
     return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
 }
-
 // 5. YENİ: Vezir Hareketi
 function validateQueenMove(startRow, startCol, targetRow, targetCol) {
     // Vezir = Kale + Fil kombinasyonudur
     return validateRookMove(startRow, startCol, targetRow, targetCol) || 
            validateBishopMove(startRow, startCol, targetRow, targetCol);
 }
-
 // 6. YENİ: Şah Hareketi (Rok hariç temel hareket)
 function validateKingMove(startRow, startCol, targetRow, targetCol) {
     const rowDiff = Math.abs(startRow - targetRow);
     const colDiff = Math.abs(startCol - targetCol);
     return rowDiff <= 1 && colDiff <= 1;
 }
-
 createBoard();
