@@ -246,10 +246,4 @@ function validateQueenMove(startRow, startCol, targetRow, targetCol) {
     return validateRookMove(startRow, startCol, targetRow, targetCol) || 
            validateBishopMove(startRow, startCol, targetRow, targetCol);
 }
-// 6. YENİ: Şah Hareketi (Rok hariç temel hareket)
-function validateKingMove(startRow, startCol, targetRow, targetCol) {
-    const rowDiff = Math.abs(startRow - targetRow);
-    const colDiff = Math.abs(startCol - targetCol);
-    return rowDiff <= 1 && colDiff <= 1;
-}
 createBoard();
