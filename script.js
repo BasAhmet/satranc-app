@@ -52,6 +52,7 @@ function createBoard() {
     }
     updateTurnIndicator();
 }
+// ... Diğer kodların üst kısımları aynı kalıyor ...
 function handleSquareClick(event) {
     const square = event.currentTarget;
     const row = parseInt(square.dataset.row);
@@ -68,17 +69,79 @@ function handleSquareClick(event) {
         } else if (pieceAtSquare && isPieceCurrentPlayers(pieceAtSquare)) {
             selectSquare(square, row, col);
         } else {
-            // YENİ: Kendi taşımızın üzerine hamle yapmayı en baştan engelliyoruz
             if (pieceAtSquare !== '' && isPieceCurrentPlayers(pieceAtSquare)) return;
 
+            // 1. Taşın kendi fiziksel kuralına uyuyor mu?
             if (isValidMove(selectedSquare.row, selectedSquare.col, row, col)) {
-                movePiece(row, col);
+                
+                // 2. SİMÜLASYON: Bu hamle şahımızı tehlikeye atıyor mu?
+                const originalTargetPiece = initialBoard[row][col];
+                const pieceToMove = initialBoard[selectedSquare.row][selectedSquare.col];
+                
+                // Geçici olarak hamleyi yap
+                initialBoard[row][col] = pieceToMove;
+                initialBoard[selectedSquare.row][selectedSquare.col] = '';
+                
+                // Şah güvende mi kontrol et
+                const isSafe = !isKingInCheck(currentPlayer);
+                
+                // Tahtayı geri al (Simülasyon bitti)
+                initialBoard[selectedSquare.row][selectedSquare.col] = pieceToMove;
+                initialBoard[row][col] = originalTargetPiece;
+
+                // Eğer şah güvendeyse gerçek hamleyi yap, değilse iptal et
+                if (isSafe) {
+                    movePiece(row, col);
+                } else {
+                    // Şah tehlikede olduğu için bu hamleye izin verilmiyor
+                    clearSelection();
+                }
             } else {
                 clearSelection();
             }
         }
     }
 }
+// ... selectSquare, clearSelection, movePiece vb. buralarda aynı kalıyor ...
+// =========================================================================
+// YENİ: ŞAH KONTROL MEKANİZMASI
+// =========================================================================
+// Bir taşın belirli bir renge ait olup olmadığını kontrol eder
+function isPieceColor(piece, color) {
+    const isWhite = piece === piece.toUpperCase();
+    return (color === 'white' && isWhite) || (color === 'black' && !isWhite);
+}
+// Belirtilen rengin şahı tehdit altında mı diye tüm tahtayı tarar
+function isKingInCheck(color) {
+    let kingRow, kingCol;
+    const kingSymbol = color === 'white' ? 'K' : 'k';    
+    // 1. Kendi şahımızın koordinatlarını bul
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            if (initialBoard[r][c] === kingSymbol) {
+                kingRow = r;
+                kingCol = c;
+                break;
+            }
+        }
+    }
+    // 2. Bütün tahtayı dolaş ve rakip taşların şahımıza hamle yapıp yapamadığına bak
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = initialBoard[r][c];
+            if (piece !== '' && !isPieceColor(piece, color)) {
+                // Rakip taşın bizim şahımızın karesine geçerli bir hamlesi var mı?
+                if (isValidMove(r, c, kingRow, kingCol)) {
+                    return true; // Şah çekilmiş!
+                }
+            }
+        }
+    }
+    return false; // Şah güvende
+}
+// =========================================================================
+// MANTIK MOTORU: HAMLE DOĞRULAMA ALGORİTMALARI
+// =========================================================================
 function isPieceCurrentPlayers(piece) {
     const isWhite = piece === piece.toUpperCase();
     return (currentPlayer === 'white' && isWhite) || (currentPlayer === 'black' && !isWhite);
