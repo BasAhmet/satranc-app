@@ -360,6 +360,12 @@ function hasAnyValidMove(color) {
                 for (let targetRow = 0; targetRow < 8; targetRow++) {
                     for (let targetCol = 0; targetCol < 8; targetCol++) {
                         
+                        // YENİ DÜZELTME: Hedef karede kendi taşımız varsa bu hayali hamleyi direkt atla!
+                        const targetPiece = initialBoard[targetRow][targetCol];
+                        if (targetPiece !== '' && isPieceColor(targetPiece, color)) {
+                            continue; 
+                        }
+                        
                         // 4. Eğer bu hedefe gitmek fiziksel olarak kurallara uygunsa
                         if (isValidMove(startRow, startCol, targetRow, targetCol)) {
                             
