@@ -104,9 +104,44 @@ function clearSelection() {
     }
 }
 
+//function movePiece(targetRow, targetCol) {
+//    const pieceToMove = initialBoard[selectedSquare.row][selectedSquare.col];
+//    
+//    if (pieceToMove.toLowerCase() === 'p' && targetCol !== selectedSquare.col && initialBoard[targetRow][targetCol] === '') {
+//        initialBoard[selectedSquare.row][targetCol] = ''; 
+//    }
+//
+//    initialBoard[targetRow][targetCol] = pieceToMove;
+//    initialBoard[selectedSquare.row][selectedSquare.col] = '';
+//    
+//    lastMove = {
+//        piece: pieceToMove,
+//        startRow: selectedSquare.row,
+//        startCol: selectedSquare.col,
+//        targetRow: targetRow,
+//        targetCol: targetCol
+//    };
+//
+//    clearSelection();
+//    currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+//    createBoard();
+//}
+// ... (Diğer kodlar aynı kalıyor, sadece aşağıdaki fonksiyonları güncelle)
+
 function movePiece(targetRow, targetCol) {
     const pieceToMove = initialBoard[selectedSquare.row][selectedSquare.col];
     
+    // YENİ: Rok (Castling) Hamlesi gerçekleştiyse Kaleyi de taşı
+    if (pieceToMove.toLowerCase() === 'k' && Math.abs(targetCol - selectedSquare.col) === 2) {
+        const isKingside = targetCol > selectedSquare.col; // Şah kanadı mı?
+        const rookCol = isKingside ? 7 : 0;
+        const newRookCol = isKingside ? 5 : 3;
+        
+        initialBoard[targetRow][newRookCol] = initialBoard[targetRow][rookCol];
+        initialBoard[targetRow][rookCol] = '';
+    }
+
+    // Piyon En Passant ve diğerleri... (Aynı)
     if (pieceToMove.toLowerCase() === 'p' && targetCol !== selectedSquare.col && initialBoard[targetRow][targetCol] === '') {
         initialBoard[selectedSquare.row][targetCol] = ''; 
     }
@@ -114,17 +149,40 @@ function movePiece(targetRow, targetCol) {
     initialBoard[targetRow][targetCol] = pieceToMove;
     initialBoard[selectedSquare.row][selectedSquare.col] = '';
     
-    lastMove = {
-        piece: pieceToMove,
-        startRow: selectedSquare.row,
-        startCol: selectedSquare.col,
-        targetRow: targetRow,
-        targetCol: targetCol
-    };
+    lastMove = { piece: pieceToMove, startRow: selectedSquare.row, startCol: selectedSquare.col, targetRow: targetRow, targetCol: targetCol };
 
     clearSelection();
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
     createBoard();
+}
+
+// Şah hareketi içine Rok mantığını ekliyoruz
+function validateKingMove(startRow, startCol, targetRow, targetCol) {
+    const rowDiff = Math.abs(startRow - targetRow);
+    const colDiff = Math.abs(startCol - targetCol);
+
+    // Normal hareket
+    if (rowDiff <= 1 && colDiff <= 1) return true;
+
+    // Rok hamlesi (2 kare ilerleme)
+    if (rowDiff === 0 && colDiff === 2) {
+        const isKingside = targetCol > startCol;
+        const rookCol = isKingside ? 7 : 0;
+        
+        // Şah ve kale hareket etmemiş olmalı (Basit kontrol)
+        // Gerçek bir motorda "hasMoved" flag'i tutmalısın
+        if (initialBoard[startRow][rookCol].toLowerCase() === 'r') {
+            // Aradaki kareler boş mu?
+            const step = isKingside ? 1 : -1;
+            let checkCol = startCol + step;
+            while (checkCol !== rookCol) {
+                if (initialBoard[startRow][checkCol] !== '') return false;
+                checkCol += step;
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
 function updateTurnIndicator() {
