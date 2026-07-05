@@ -29,40 +29,33 @@ function createBoard() {
         for (let col = 0; col < 8; col++) {
             const square = document.createElement('div');
             
-            // 1. Zemin Rengi (Görselindeki tonlara uygun Tailwind class'ları)
             const isLightSquare = (row + col) % 2 === 0;
             const bgColor = isLightSquare ? 'bg-slate-200' : 'bg-slate-500';
             
-            // 2. Karenin Temel Sınıfları (Boyut, esneklik ve 'relative' şartı)
-            // Eğer tahta boyutlarında kayma olursa w-12 h-12 gibi değerleri kendine göre ayarlayabilirsin.
             square.className = `w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 flex justify-center items-center relative ${bgColor}`;
             
-            // 3. Tıklama Olayı
             square.addEventListener('click', () => handleSquareClick(row, col));
             
-            // 4. Taşları Yerleştirme
+            // ==========================================
+            // DEĞİŞEN KISIM: Taşları metin olarak ekliyoruz
+            // ==========================================
             const piece = initialBoard[row][col];
             if (piece !== '') {
-                const pieceElement = document.createElement('img');
+                const pieceElement = document.createElement('span');
+                pieceElement.textContent = piece; // Taşı doğrudan metin olarak basıyoruz
                 
-                // DİKKAT: Taş görsellerinin yolunu kendi projene göre düzenle!
-                // Örneğin resimlerin "img" klasöründeyse: `img/${piece}.png` yapmalısın.
-                pieceElement.src = `images/${piece}.png`; 
-                
-                pieceElement.className = 'w-4/5 h-4/5 cursor-pointer select-none';
+                // Metin boyutunu ekran genişliğine göre Tailwind ile ayarlıyoruz (text-4xl vb.)
+                // Taşların daha belirgin durması için hafif bir gölge (drop-shadow) ekledim
+                pieceElement.className = 'text-3xl sm:text-4xl md:text-5xl cursor-pointer select-none drop-shadow-md';
                 square.appendChild(pieceElement);
             }
+            // ==========================================
 
-            // 5. Seçili Kare Vurgusu (Tıklanan kareyi sarı vb. yapmak için)
             if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) {
                 square.classList.remove(bgColor);
                 square.classList.add('bg-yellow-400'); 
             }
 
-            // ==========================================
-            // NOTASYON KOORDİNATLARINI YAZDIRMA
-            // ==========================================
-            
             // Sütun Harfleri (a-h)
             if (row === 7) {
                 const fileLabel = document.createElement('span');
