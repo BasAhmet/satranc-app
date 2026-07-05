@@ -14,9 +14,13 @@ const initialBoard = [
     ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
     ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
 ];
+//const pieceSymbols = {
+//    'r': '♜\uFE0E', 'n': '♞\uFE0E', 'b': '♝\uFE0E', 'q': '♛\uFE0E', 'k': '♚\uFE0E', 'p': '♟\uFE0E',
+//    'R': '♖\uFE0E', 'N': '♘\uFE0E', 'B': '♗\uFE0E', 'Q': '♕\uFE0E', 'K': '♔\uFE0E', 'P': '♙\uFE0E'
+//};
 const pieceSymbols = {
-    'r': '♜\uFE0E', 'n': '♞\uFE0E', 'b': '♝\uFE0E', 'q': '♛\uFE0E', 'k': '♚\uFE0E', 'p': '♟\uFE0E',
-    'R': '♖\uFE0E', 'N': '♘\uFE0E', 'B': '♗\uFE0E', 'Q': '♕\uFE0E', 'K': '♔\uFE0E', 'P': '♙\uFE0E'
+    'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟', // Siyah taşlar
+    'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'  // Beyaz taşlar
 };
 let selectedSquare = null;
 let currentPlayer = 'white';
@@ -42,11 +46,12 @@ function createBoard() {
             const piece = initialBoard[row][col];
             if (piece !== '') {
                 const pieceElement = document.createElement('span');
-                pieceElement.textContent = piece; // Taşı doğrudan metin olarak basıyoruz
+                // Ham harfi (örn: 'r') alıp sembol sözlüğünden karşılığını (örn: '♜') buluyoruz
+                pieceElement.textContent = pieceSymbols[piece];
                 
                 // Metin boyutunu ekran genişliğine göre Tailwind ile ayarlıyoruz (text-4xl vb.)
                 // Taşların daha belirgin durması için hafif bir gölge (drop-shadow) ekledim
-                pieceElement.className = 'text-3xl sm:text-4xl md:text-5xl cursor-pointer select-none drop-shadow-md';
+                pieceElement.className = 'text-4xl sm:text-5xl md:text-6xl text-slate-800 cursor-pointer select-none drop-shadow-sm';
                 square.appendChild(pieceElement);
             }
             // ==========================================
