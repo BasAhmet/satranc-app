@@ -410,26 +410,27 @@ function getAlgebraicNotation(row, col) {
 
 function recordMove(piece, targetRow, targetCol) {
     const notation = getAlgebraicNotation(targetRow, targetCol);
-    // Piyonlar için sembol kullanılmaz, sadece koordinat yazılır. Diğer taşlar sembolleriyle yazılır.
     const pieceSymbol = piece.toLowerCase() === 'p' ? '' : pieceSymbols[piece]; 
     const moveText = pieceSymbol + notation;
 
     if (currentPlayer === 'white') {
-        // Beyazın hamlesi: Yeni bir satır oluştur
+        // Beyazın hamlesi
         currentMoveRow = document.createElement('div');
-        currentMoveRow.className = 'flex justify-between border-b border-slate-200 pb-1 mb-1';
+        // Mobilde yan yana şeritler (border-r, shrink-0), masaüstünde alt alta liste (border-b)
+        currentMoveRow.className = 'flex shrink-0 w-32 md:w-auto md:justify-between border-r md:border-r-0 md:border-b border-slate-200 pr-2 md:pr-0 md:pb-1 md:mb-1 mr-2 md:mr-0 items-center';
         
         const moveNumSpan = document.createElement('span');
-        moveNumSpan.className = 'text-slate-400 w-8';
+        moveNumSpan.className = 'text-slate-400 w-6 font-bold text-xs';
         moveNumSpan.textContent = moveNumber + '.';
 
         const whiteMoveSpan = document.createElement('span');
-        whiteMoveSpan.className = 'w-20 font-medium text-left';
+        whiteMoveSpan.className = 'w-10 font-medium text-left';
         whiteMoveSpan.textContent = moveText;
 
-        // Geçici olarak siyahın hamlesi gelene kadar boş bir alan bırak
+        // Siyahın hamlesi gelene kadar genişliği koruması için şeffaf bir yer tutucu
         const blackMovePlaceholder = document.createElement('span');
-        blackMovePlaceholder.className = 'w-20 text-right black-move-placeholder';
+        blackMovePlaceholder.className = 'w-10 text-right black-move-placeholder text-transparent';
+        blackMovePlaceholder.textContent = '...'; 
 
         currentMoveRow.appendChild(moveNumSpan);
         currentMoveRow.appendChild(whiteMoveSpan);
@@ -438,19 +439,20 @@ function recordMove(piece, targetRow, targetCol) {
         moveHistoryContainer.appendChild(currentMoveRow);
         
     } else {
-        // Siyahın hamlesi: Mevcut satırdaki boşluğu doldur
+        // Siyahın hamlesi: Şeffaf yer tutucuyu görünür yap ve yazıyı güncelle
         if (currentMoveRow) {
             const blackPlaceholder = currentMoveRow.querySelector('.black-move-placeholder');
             if (blackPlaceholder) {
-                blackPlaceholder.classList.remove('black-move-placeholder');
-                blackPlaceholder.classList.add('font-medium');
+                blackPlaceholder.classList.remove('black-move-placeholder', 'text-transparent');
+                blackPlaceholder.classList.add('font-medium', 'text-slate-800');
                 blackPlaceholder.textContent = moveText;
             }
         }
-        moveNumber++; // Bir sonraki tam hamleye geç
+        moveNumber++; 
     }
     
-    // Panel doldukça otomatik olarak en aşağı kaydır
+    // YENİ: Masaüstü için aşağıya, mobil için sağa doğru otomatik kaydır
     moveHistoryContainer.scrollTop = moveHistoryContainer.scrollHeight;
+    moveHistoryContainer.scrollLeft = moveHistoryContainer.scrollWidth;
 }
 createBoard();
