@@ -203,6 +203,21 @@ function movePiece(targetRow, targetCol) {
     clearSelection();
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
     createBoard();
+    // YENİ: Hamle yapılıp sıra karşıya geçtikten hemen sonra oyun sonu kontrolü yap
+    // setTimeout kullanıyoruz ki tahta ekranda çizildikten (render) sonra uyarı çıksın
+    setTimeout(() => {
+        if (!hasAnyValidMove(currentPlayer)) {
+            if (isKingInCheck(currentPlayer)) {
+                const winner = currentPlayer === 'white' ? 'Siyah' : 'Beyaz';
+                alert(`ŞAH MAT! ${winner} kazandı!`);
+            } else {
+                alert("PAT! Geçerli hamle yok, oyun berabere.");
+            }
+        } else if (isKingInCheck(currentPlayer)) {
+            // İsteğe bağlı: Oyun bitmedi ama şah çekildi uyarısı
+            console.log("Şah çekildi!");
+        }
+    }, 10);
 }
 // Şah hareketi içine Rok mantığını ekliyoruz
 function validateKingMove(startRow, startCol, targetRow, targetCol) {
@@ -328,5 +343,48 @@ function validateQueenMove(startRow, startCol, targetRow, targetCol) {
     // Vezir = Kale + Fil kombinasyonudur
     return validateRookMove(startRow, startCol, targetRow, targetCol) || 
            validateBishopMove(startRow, startCol, targetRow, targetCol);
+}
+// =========================================================================
+// YENİ: OYUN SONU KONTROLÜ (MAT VE PAT)
+// =========================================================================
+function hasAnyValidMove(color) {
+    // 1. Tahtadaki tüm kareleri gez
+    for (let startRow = 0; startRow < 8; startRow++) {
+        for (let startCol = 0; startCol < 8; startCol++) {
+            const piece = initialBoard[startRow][startCol];
+            
+            // 2. Eğer bu karede kendi taşımız varsa...
+            if (piece !== '' && isPieceColor(piece, color)) {
+                
+                // 3. Bu taşın gidebileceği tüm olası hedef kareleri dene
+                for (let targetRow = 0; targetRow < 8; targetRow++) {
+                    for (let targetCol = 0; targetCol < 8; targetCol++) {
+                        
+                        // 4. Eğer bu hedefe gitmek fiziksel olarak kurallara uygunsa
+                        if (isValidMove(startRow, startCol, targetRow, targetCol)) {
+                            
+                            // 5. Simülasyonu yap: Bu hamle şahı kurtarıyor mu?
+                            const originalTargetPiece = initialBoard[targetRow][targetCol];
+                            initialBoard[targetRow][targetCol] = piece;
+                            initialBoard[startRow][startCol] = '';
+
+                            const isSafe = !isKingInCheck(color);
+
+                            // Simülasyonu geri al
+                            initialBoard[startRow][startCol] = piece;
+                            initialBoard[targetRow][targetCol] = originalTargetPiece;
+
+                            // Eğer şahı güvende tutan tek bir hamle bile bulduysak oyun devam eder
+                            if (isSafe) {
+                                return true; 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Tüm taşların tüm ihtimallerini denedik, kurtuluş yok!
+    return false; 
 }
 createBoard();
