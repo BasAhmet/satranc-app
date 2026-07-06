@@ -48,8 +48,11 @@ function createBoard() {
             if (piece !== '') {
                 const pieceElement = document.createElement('span');
                 pieceElement.textContent = pieceSymbols[piece];
-                pieceElement.className = 'text-4xl sm:text-5xl md:text-6xl text-slate-800 cursor-pointer select-none drop-shadow-sm';
+                //pieceElement.className = 'text-4xl sm:text-5xl md:text-6xl text-slate-800 cursor-pointer select-none drop-shadow-sm';
                 square.appendChild(pieceElement);
+                // Taşı oluşturan elemente standart bir font ailesi atamak emojileşmeyi önler.
+                pieceElement.className = 'text-4xl sm:text-5xl md:text-6xl text-slate-800 select-none drop-shadow-sm pointer-events-none';
+                pieceElement.style.fontFamily = "'Arial Unicode MS', 'Segoe UI Symbol', sans-serif";
             }
 
             // Seçili kare vurgusu
