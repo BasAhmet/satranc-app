@@ -31,7 +31,29 @@
             </div>>
         </div>
     </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // Firebase Console'dan kopyaladığın config buraya!
+    const firebaseConfig = {
+        apiKey: "AIzaSyBIOiygyqnwcGyxnUn6tGVA4tT2_QjknIA",
+        authDomain: "ahba-satranc.firebaseapp.com",
+        projectId: "ahba-satranc",
+        storageBucket: "ahba-satranc.firebasestorage.app",
+        messagingSenderId: "1002253988356",
+        appId: "1:1002253988356:web:66063dafa6926c5e033b51",
+        measurementId: "G-F7B3ZJCH5W"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // script.js dosyasının db'ye erişebilmesi için:
+    window.db = db;
+    
+    console.log("Firebase başarıyla bağlandı!");
+</script>
     <script src="script.js"></script>
 </body>
 </html>
