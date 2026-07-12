@@ -226,6 +226,11 @@ function finalizeMove(piece, targetRow, targetCol) {
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
     updateTurnIndicator();
     createBoard();
+    
+    // ==========================================
+    // YENİ EKLENEN KISIM: Hamleyi buluta gönder
+    // ==========================================
+    saveGame();
 
     setTimeout(() => {
         if (!hasAnyValidMove(currentPlayer)) {
@@ -474,6 +479,29 @@ function recordMove(piece, targetRow, targetCol) {
     
     moveHistoryContainer.scrollTop = moveHistoryContainer.scrollHeight;
     moveHistoryContainer.scrollLeft = moveHistoryContainer.scrollWidth;
+}
+// =========================================================================
+// FIREBASE VERİTABANI İŞLEMLERİ
+// =========================================================================
+function saveGame() {
+    // Eğer index.html'den gelen window.firestore nesnesi yoksa hata vermemesi için kontrol ediyoruz
+    if (!window.firestore || !window.db) return; 
+
+    const { doc, setDoc } = window.firestore;
+    
+    // "games" koleksiyonu altında "oyun1" adında bir belge oluşturuyoruz
+    const gameRef = doc(window.db, "games", "oyun1"); 
+
+    setDoc(gameRef, {
+        board: initialBoard,       // Tahtanın güncel 8x8 dizilimi
+        turn: currentPlayer,       // Sıranın kimde olduğu ('white' veya 'black')
+        moveCount: moveNumber,     // Kaçıncı hamlede olduğumuz
+        lastUpdate: new Date()     // Son güncelleme zamanı
+    }).then(() => {
+        console.log("Hamle başarıyla Firebase'e kaydedildi!");
+    }).catch(e => {
+        console.error("Firebase'e kaydederken hata oluştu:", e);
+    });
 }
 
 // =========================================================================
