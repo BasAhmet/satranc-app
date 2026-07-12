@@ -16,8 +16,8 @@ const initialBoard = [
 ];
 
 const pieceSymbols = {
-    'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟', // Siyah taşlar
-    'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'  // Beyaz taşlar
+    'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟', 
+    'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'  
 };
 
 let selectedSquare = null;
@@ -51,13 +51,11 @@ function createBoard() {
                 square.appendChild(pieceElement);
             }
 
-            // Seçili kare vurgusu
             if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) {
                 square.classList.remove(bgColor);
                 square.classList.add('bg-yellow-400'); 
             }
 
-            // Sütun Harfleri (a-h)
             if (row === 7) {
                 const fileLabel = document.createElement('span');
                 fileLabel.textContent = String.fromCharCode(97 + col); 
@@ -66,7 +64,6 @@ function createBoard() {
                 square.appendChild(fileLabel);
             }
 
-            // Satır Sayıları (1-8)
             if (col === 7) {
                 const rankLabel = document.createElement('span');
                 rankLabel.textContent = 8 - row; 
@@ -86,7 +83,7 @@ function createBoard() {
 function showPromotionModal(color, targetRow, targetCol) {
     const modal = document.getElementById('promotion-modal');
     const optionsContainer = document.getElementById('promotion-options');
-    optionsContainer.innerHTML = ''; // Önceki seçenekleri temizle
+    optionsContainer.innerHTML = ''; 
 
     const pieces = color === 'white' 
         ? { 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘' } 
@@ -108,11 +105,7 @@ function showPromotionModal(color, targetRow, targetCol) {
 function handlePromotionSelection(chosenPiece, targetRow, targetCol) {
     const modal = document.getElementById('promotion-modal');
     modal.classList.add('hidden');
-
-    // Seçilen taşı kareye yerleştir
     initialBoard[targetRow][targetCol] = chosenPiece;
-
-    // Hamleyi tamamla ve sırayı devret
     finalizeMove(chosenPiece, targetRow, targetCol);
 }
 
@@ -190,31 +183,20 @@ function movePiece(targetRow, targetCol) {
         initialBoard[selectedSquare.row][targetCol] = '';
     }
 
-    // Taşı hareket ettir
     initialBoard[targetRow][targetCol] = pieceToMove;
     initialBoard[selectedSquare.row][selectedSquare.col] = '';
     
-    // Son hamleyi hafızaya al
-    lastMove = { 
-        piece: pieceToMove, 
-        startRow: selectedSquare.row, 
-        startCol: selectedSquare.col, 
-        targetRow: targetRow, 
-        targetCol: targetCol 
-    };
+    lastMove = { piece: pieceToMove, startRow: selectedSquare.row, startCol: selectedSquare.col, targetRow: targetRow, targetCol: targetCol };
 
-    // TERFİ KONTROLÜ
     const isWhitePromotion = (pieceToMove === 'P' && targetRow === 0);
     const isBlackPromotion = (pieceToMove === 'p' && targetRow === 7);
 
     if (isWhitePromotion || isBlackPromotion) {
-        // Terfi ekranını açıyoruz ve sıra değişimini taş seçilene kadar bekletiyoruz
         showPromotionModal(currentPlayer, targetRow, targetCol);
         clearSelection();
         return; 
     }
 
-    // Normal Hamleyi Tamamla
     finalizeMove(pieceToMove, targetRow, targetCol);
 }
 
@@ -226,11 +208,9 @@ function finalizeMove(piece, targetRow, targetCol) {
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
     updateTurnIndicator();
     createBoard();
-    
-    // ==========================================
-    // YENİ EKLENEN KISIM: Hamleyi buluta gönder
-    // ==========================================
-    saveGame();
+
+    // HAMLEYİ FIREBASE'E GÖNDERİYORUZ
+    saveGame(); 
 
     setTimeout(() => {
         if (!hasAnyValidMove(currentPlayer)) {
@@ -272,9 +252,7 @@ function isKingInCheck(color) {
     for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
             if (initialBoard[r][c] === kingSymbol) {
-                kingRow = r;
-                kingCol = c;
-                break;
+                kingRow = r; kingCol = c; break;
             }
         }
     }
@@ -283,9 +261,7 @@ function isKingInCheck(color) {
         for (let c = 0; c < 8; c++) {
             const piece = initialBoard[r][c];
             if (piece !== '' && !isPieceColor(piece, color)) {
-                if (isValidMove(r, c, kingRow, kingCol)) {
-                    return true;
-                }
+                if (isValidMove(r, c, kingRow, kingCol)) return true;
             }
         }
     }
@@ -326,9 +302,7 @@ function validatePawnMove(startRow, startCol, targetRow, targetCol, piece) {
     if (Math.abs(colDiff) === 1 && rowDiff === direction && targetPiece === '') {
         if (lastMove && lastMove.piece.toLowerCase() === 'p') {
             if (Math.abs(lastMove.startRow - lastMove.targetRow) === 2) {
-                if (lastMove.targetRow === startRow && lastMove.targetCol === targetCol) {
-                    return true;
-                }
+                if (lastMove.targetRow === startRow && lastMove.targetCol === targetCol) return true;
             }
         }
     }
@@ -403,9 +377,7 @@ function hasAnyValidMove(color) {
                 for (let targetRow = 0; targetRow < 8; targetRow++) {
                     for (let targetCol = 0; targetCol < 8; targetCol++) {
                         const targetPiece = initialBoard[targetRow][targetCol];
-                        if (targetPiece !== '' && isPieceColor(targetPiece, color)) {
-                            continue;
-                        }
+                        if (targetPiece !== '' && isPieceColor(targetPiece, color)) continue;
                         
                         if (isValidMove(startRow, startCol, targetRow, targetCol)) {
                             const originalTargetPiece = initialBoard[targetRow][targetCol];
@@ -416,9 +388,7 @@ function hasAnyValidMove(color) {
 
                             initialBoard[startRow][startCol] = piece;
                             initialBoard[targetRow][targetCol] = originalTargetPiece;
-                            if (isSafe) {
-                                return true;
-                            }
+                            if (isSafe) return true;
                         }
                     }
                 }
@@ -480,28 +450,27 @@ function recordMove(piece, targetRow, targetCol) {
     moveHistoryContainer.scrollTop = moveHistoryContainer.scrollHeight;
     moveHistoryContainer.scrollLeft = moveHistoryContainer.scrollWidth;
 }
+
 // =========================================================================
-// FIREBASE VERİTABANI İŞLEMLERİ
+// 5. FIREBASE VERİTABANI İŞLEMLERİ
 // =========================================================================
 function saveGame() {
-    // Eğer index.html'den gelen window.firestore nesnesi yoksa hata vermemesi için kontrol ediyoruz
-    if (!window.firestore || !window.db) return{
-        console.error("HATA: Firebase bağlantısı (window.firestore veya window.db) script.js'ye ulaşamadı! Lütfen index.html dosyanızı kontrol edin.");
+    if (!window.firestore || !window.db) {
+        console.warn("Firebase bağlantısı hazır değil, hamle sadece yerel olarak oynandı.");
         return; 
-    };
+    }
 
     const { doc, setDoc } = window.firestore;
     
-    // "games" koleksiyonu altında "oyun1" adında bir belge oluşturuyoruz
     const gameRef = doc(window.db, "games", "oyun1"); 
 
     setDoc(gameRef, {
-        board: initialBoard,       // Tahtanın güncel 8x8 dizilimi
-        turn: currentPlayer,       // Sıranın kimde olduğu ('white' veya 'black')
-        moveCount: moveNumber,     // Kaçıncı hamlede olduğumuz
-        lastUpdate: new Date()     // Son güncelleme zamanı
+        board: JSON.stringify(initialBoard), // Veriyi daha stabil iletmek için JSON formatına çeviriyoruz
+        turn: currentPlayer,       
+        moveCount: moveNumber,     
+        lastUpdate: new Date()     
     }).then(() => {
-        console.log("Hamle başarıyla Firebase'e kaydedildi!");
+        console.log("Harika! Hamle başarıyla Firebase'e kaydedildi!");
     }).catch(e => {
         console.error("Firebase'e kaydederken hata oluştu:", e);
     });
