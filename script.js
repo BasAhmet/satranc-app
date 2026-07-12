@@ -1,3 +1,20 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBIOiygyqnwcGyxnUn6tGVA4tT2_QjknIA",
+    authDomain: "ahba-satranc.firebaseapp.com",
+    projectId: "ahba-satranc",
+    storageBucket: "ahba-satranc.firebasestorage.app",
+    messagingSenderId: "1002253988356",
+    appId: "1:1002253988356:web:66063dafa6926c5e033b51",
+    measurementId: "G-F7B3ZJCH5W"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// === MEVCUT KODLARIN BURADAN İTİBAREN BAŞLAYACAK ===
 const boardContainer = document.getElementById('board-container');
 const turnIndicator = document.getElementById('turn-indicator');
 const moveHistoryContainer = document.getElementById('move-history');
@@ -455,17 +472,11 @@ function recordMove(piece, targetRow, targetCol) {
 // 5. FIREBASE VERİTABANI İŞLEMLERİ
 // =========================================================================
 function saveGame() {
-    if (!window.firestore || !window.db) {
-        console.warn("Firebase bağlantısı hazır değil, hamle sadece yerel olarak oynandı.");
-        return; 
-    }
-
-    const { doc, setDoc } = window.firestore;
-    
-    const gameRef = doc(window.db, "games", "oyun1"); 
+    // games koleksiyonu altında oyun1 belgesini hedefliyoruz
+    const gameRef = doc(db, "games", "oyun1"); 
 
     setDoc(gameRef, {
-        board: JSON.stringify(initialBoard), // Veriyi daha stabil iletmek için JSON formatına çeviriyoruz
+        board: JSON.stringify(initialBoard), 
         turn: currentPlayer,       
         moveCount: moveNumber,     
         lastUpdate: new Date()     
