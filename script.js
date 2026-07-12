@@ -485,7 +485,10 @@ function recordMove(piece, targetRow, targetCol) {
 // =========================================================================
 function saveGame() {
     // Eğer index.html'den gelen window.firestore nesnesi yoksa hata vermemesi için kontrol ediyoruz
-    if (!window.firestore || !window.db) return; 
+    if (!window.firestore || !window.db) return{
+        console.error("HATA: Firebase bağlantısı (window.firestore veya window.db) script.js'ye ulaşamadı! Lütfen index.html dosyanızı kontrol edin.");
+        return; 
+    };
 
     const { doc, setDoc } = window.firestore;
     
