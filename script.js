@@ -2,7 +2,7 @@ const boardContainer = document.getElementById('board-container');
 const turnIndicator = document.getElementById('turn-indicator');
 const moveHistoryContainer = document.getElementById('move-history');
 let moveNumber = 1;
-let currentMoveRow = null; 
+let currentMoveRow = null;
 
 const initialBoard = [
     ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
@@ -22,37 +22,33 @@ const pieceSymbols = {
 
 let selectedSquare = null;
 let currentPlayer = 'white';
-let lastMove = null; 
+let lastMove = null;
 
 // =========================================================================
 // 1. TAHTA OLUŞTURMA VE ÇİZİM
 // =========================================================================
 function createBoard() {
     boardContainer.innerHTML = '';
-    
+
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
             const square = document.createElement('div');
-            
             const isLightSquare = (row + col) % 2 === 0;
             const bgColor = isLightSquare ? 'bg-slate-200' : 'bg-slate-500';
-            
+
             square.className = `w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 flex justify-center items-center relative ${bgColor}`;
             square.dataset.row = row;
             square.dataset.col = col;
-            
+
             square.addEventListener('click', handleSquareClick);
             
-            // Taşları Unicode metin olarak ekliyoruz
             const piece = initialBoard[row][col];
             if (piece !== '') {
                 const pieceElement = document.createElement('span');
                 pieceElement.textContent = pieceSymbols[piece];
-                //pieceElement.className = 'text-4xl sm:text-5xl md:text-6xl text-slate-800 cursor-pointer select-none drop-shadow-sm';
-                square.appendChild(pieceElement);
-                // Taşı oluşturan elemente standart bir font ailesi atamak emojileşmeyi önler.
                 pieceElement.className = 'text-4xl sm:text-5xl md:text-6xl text-slate-800 select-none drop-shadow-sm pointer-events-none';
                 pieceElement.style.fontFamily = "'Arial Unicode MS', 'Segoe UI Symbol', sans-serif";
+                square.appendChild(pieceElement);
             }
 
             // Seçili kare vurgusu
@@ -82,6 +78,42 @@ function createBoard() {
             boardContainer.appendChild(square);
         }
     }
+}
+
+// =========================================================================
+// PİYON TERFİSİ (PROMOTION) YÖNETİMİ
+// =========================================================================
+function showPromotionModal(color, targetRow, targetCol) {
+    const modal = document.getElementById('promotion-modal');
+    const optionsContainer = document.getElementById('promotion-options');
+    optionsContainer.innerHTML = ''; // Önceki seçenekleri temizle
+
+    const pieces = color === 'white' 
+        ? { 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘' } 
+        : { 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞' };
+
+    for (const [key, symbol] of Object.entries(pieces)) {
+        const btn = document.createElement('button');
+        btn.className = 'w-16 h-16 text-5xl bg-slate-50 hover:bg-slate-200 rounded border-2 border-slate-300 flex items-center justify-center cursor-pointer transition-colors pb-2 select-none';
+        btn.innerHTML = symbol;
+        btn.style.fontFamily = "'Arial Unicode MS', 'Segoe UI Symbol', sans-serif";
+        
+        btn.onclick = () => handlePromotionSelection(key, targetRow, targetCol);
+        optionsContainer.appendChild(btn);
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function handlePromotionSelection(chosenPiece, targetRow, targetCol) {
+    const modal = document.getElementById('promotion-modal');
+    modal.classList.add('hidden');
+
+    // Seçilen taşı kareye yerleştir
+    initialBoard[targetRow][targetCol] = chosenPiece;
+
+    // Hamleyi tamamla ve sırayı devret
+    finalizeMove(chosenPiece, targetRow, targetCol);
 }
 
 // =========================================================================
@@ -132,7 +164,7 @@ function handleSquareClick(event) {
 function selectSquare(square, row, col) {
     clearSelection();
     selectedSquare = { row, col };
-    createBoard(); // Vurguyu yenilemek için tahtayı tekrar çiz
+    createBoard();
 }
 
 function clearSelection() {
@@ -142,8 +174,8 @@ function clearSelection() {
 
 function movePiece(targetRow, targetCol) {
     const pieceToMove = initialBoard[selectedSquare.row][selectedSquare.col];
-    
-    // Rok (Castling) Hamlesi gerçekleştiyse Kaleyi de taşı
+
+    // Rok (Castling)
     if (pieceToMove.toLowerCase() === 'k' && Math.abs(targetCol - selectedSquare.col) === 2) {
         const isKingside = targetCol > selectedSquare.col;
         const rookCol = isKingside ? 7 : 0;
@@ -155,21 +187,14 @@ function movePiece(targetRow, targetCol) {
 
     // Piyon En Passant
     if (pieceToMove.toLowerCase() === 'p' && targetCol !== selectedSquare.col && initialBoard[targetRow][targetCol] === '') {
-        initialBoard[selectedSquare.row][targetCol] = ''; 
+        initialBoard[selectedSquare.row][targetCol] = '';
     }
 
-    // Taşı yeni yerine koy ve eski yerini boşalt
+    // Taşı hareket ettir
     initialBoard[targetRow][targetCol] = pieceToMove;
     initialBoard[selectedSquare.row][selectedSquare.col] = '';
     
-    // Piyon Terfisi (Promotion)
-    if (pieceToMove === 'P' && targetRow === 0) {
-        initialBoard[targetRow][targetCol] = 'Q';
-    } else if (pieceToMove === 'p' && targetRow === 7) {
-        initialBoard[targetRow][targetCol] = 'q';
-    }
-
-    // Son hamleyi hafızaya kaydet
+    // Son hamleyi hafızaya al
     lastMove = { 
         piece: pieceToMove, 
         startRow: selectedSquare.row, 
@@ -178,16 +203,30 @@ function movePiece(targetRow, targetCol) {
         targetCol: targetCol 
     };
 
-    // Hamleyi panele kaydet
-    recordMove(pieceToMove, targetRow, targetCol);
+    // TERFİ KONTROLÜ
+    const isWhitePromotion = (pieceToMove === 'P' && targetRow === 0);
+    const isBlackPromotion = (pieceToMove === 'p' && targetRow === 7);
+
+    if (isWhitePromotion || isBlackPromotion) {
+        // Terfi ekranını açıyoruz ve sıra değişimini taş seçilene kadar bekletiyoruz
+        showPromotionModal(currentPlayer, targetRow, targetCol);
+        clearSelection();
+        return; 
+    }
+
+    // Normal Hamleyi Tamamla
+    finalizeMove(pieceToMove, targetRow, targetCol);
+}
+
+// Hamleyi bitirme, sırayı geçirme ve mat kontrolü
+function finalizeMove(piece, targetRow, targetCol) {
+    recordMove(piece, targetRow, targetCol);
 
     clearSelection();
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
-    
-    updateTurnIndicator(); // Sıra göstergesini güncelle
-    createBoard();         // Tahtayı yeni duruma göre çiz
+    updateTurnIndicator();
+    createBoard();
 
-    // Oyun sonu kontrolü
     setTimeout(() => {
         if (!hasAnyValidMove(currentPlayer)) {
             if (isKingInCheck(currentPlayer)) {
@@ -224,8 +263,7 @@ function isPieceColor(piece, color) {
 
 function isKingInCheck(color) {
     let kingRow, kingCol;
-    const kingSymbol = color === 'white' ? 'K' : 'k';    
-    
+    const kingSymbol = color === 'white' ? 'K' : 'k';
     for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
             if (initialBoard[r][c] === kingSymbol) {
@@ -252,9 +290,7 @@ function isKingInCheck(color) {
 function isValidMove(startRow, startCol, targetRow, targetCol) {
     const piece = initialBoard[startRow][startCol];
     const type = piece.toLowerCase();
-
     if (startRow === targetRow && startCol === targetCol) return false;
-
     switch (type) {
         case 'p': return validatePawnMove(startRow, startCol, targetRow, targetCol, piece);
         case 'r': return validateRookMove(startRow, startCol, targetRow, targetCol);
@@ -269,8 +305,7 @@ function isValidMove(startRow, startCol, targetRow, targetCol) {
 function validatePawnMove(startRow, startCol, targetRow, targetCol, piece) {
     const isWhite = piece === piece.toUpperCase();
     const direction = isWhite ? -1 : 1; 
-    const startRowLimit = isWhite ? 6 : 1; 
-
+    const startRowLimit = isWhite ? 6 : 1;
     const rowDiff = targetRow - startRow;
     const colDiff = targetCol - startCol;
     const targetPiece = initialBoard[targetRow][targetCol];
@@ -282,8 +317,7 @@ function validatePawnMove(startRow, startCol, targetRow, targetCol, piece) {
             if (initialBoard[intermediateRow][startCol] === '') return true;
         }
     }
-    if (Math.abs(colDiff) === 1 && rowDiff === direction && targetPiece !== '') return true; 
-    
+    if (Math.abs(colDiff) === 1 && rowDiff === direction && targetPiece !== '') return true;
     if (Math.abs(colDiff) === 1 && rowDiff === direction && targetPiece === '') {
         if (lastMove && lastMove.piece.toLowerCase() === 'p') {
             if (Math.abs(lastMove.startRow - lastMove.targetRow) === 2) {
@@ -298,13 +332,10 @@ function validatePawnMove(startRow, startCol, targetRow, targetCol, piece) {
 
 function validateRookMove(startRow, startCol, targetRow, targetCol) {
     if (startRow !== targetRow && startCol !== targetCol) return false;
-
     const rowStep = targetRow === startRow ? 0 : (targetRow > startRow ? 1 : -1);
     const colStep = targetCol === startCol ? 0 : (targetCol > startCol ? 1 : -1);
-
     let currentRow = startRow + rowStep;
     let currentCol = startCol + colStep;
-
     while (currentRow !== targetRow || currentCol !== targetCol) {
         if (initialBoard[currentRow][currentCol] !== '') return false;
         currentRow += rowStep;
@@ -315,13 +346,10 @@ function validateRookMove(startRow, startCol, targetRow, targetCol) {
 
 function validateBishopMove(startRow, startCol, targetRow, targetCol) {
     if (Math.abs(startRow - targetRow) !== Math.abs(startCol - targetCol)) return false;
-
     const rowStep = targetRow > startRow ? 1 : -1;
     const colStep = targetCol > startCol ? 1 : -1;
-
     let currentRow = startRow + rowStep;
     let currentCol = startCol + colStep;
-
     while (currentRow !== targetRow && currentCol !== targetCol) {
         if (initialBoard[currentRow][currentCol] !== '') return false;
         currentRow += rowStep;
@@ -337,8 +365,7 @@ function validateKnightMove(startRow, startCol, targetRow, targetCol) {
 }
 
 function validateQueenMove(startRow, startCol, targetRow, targetCol) {
-    return validateRookMove(startRow, startCol, targetRow, targetCol) || 
-           validateBishopMove(startRow, startCol, targetRow, targetCol);
+    return validateRookMove(startRow, startCol, targetRow, targetCol) || validateBishopMove(startRow, startCol, targetRow, targetCol);
 }
 
 function validateKingMove(startRow, startCol, targetRow, targetCol) {
@@ -346,7 +373,6 @@ function validateKingMove(startRow, startCol, targetRow, targetCol) {
     const colDiff = Math.abs(startCol - targetCol);
 
     if (rowDiff <= 1 && colDiff <= 1) return true;
-
     if (rowDiff === 0 && colDiff === 2) {
         const isKingside = targetCol > startCol;
         const rookCol = isKingside ? 7 : 0;
@@ -368,14 +394,12 @@ function hasAnyValidMove(color) {
     for (let startRow = 0; startRow < 8; startRow++) {
         for (let startCol = 0; startCol < 8; startCol++) {
             const piece = initialBoard[startRow][startCol];
-            
             if (piece !== '' && isPieceColor(piece, color)) {
                 for (let targetRow = 0; targetRow < 8; targetRow++) {
                     for (let targetCol = 0; targetCol < 8; targetCol++) {
-                        
                         const targetPiece = initialBoard[targetRow][targetCol];
                         if (targetPiece !== '' && isPieceColor(targetPiece, color)) {
-                            continue; 
+                            continue;
                         }
                         
                         if (isValidMove(startRow, startCol, targetRow, targetCol)) {
@@ -387,9 +411,8 @@ function hasAnyValidMove(color) {
 
                             initialBoard[startRow][startCol] = piece;
                             initialBoard[targetRow][targetCol] = originalTargetPiece;
-
                             if (isSafe) {
-                                return true; 
+                                return true;
                             }
                         }
                     }
@@ -397,23 +420,22 @@ function hasAnyValidMove(color) {
             }
         }
     }
-    return false; 
+    return false;
 }
 
 // =========================================================================
 // 4. HAMLE GEÇMİŞİ VE NOTASYON MOTORU
 // =========================================================================
 function getAlgebraicNotation(row, col) {
-    const file = String.fromCharCode(97 + col); 
+    const file = String.fromCharCode(97 + col);
     const rank = 8 - row; 
     return file + rank;
 }
 
 function recordMove(piece, targetRow, targetCol) {
     if(!moveHistoryContainer) return;
-
     const notation = getAlgebraicNotation(targetRow, targetCol);
-    const pieceSymbol = piece.toLowerCase() === 'p' ? '' : pieceSymbols[piece]; 
+    const pieceSymbol = piece.toLowerCase() === 'p' ? '' : pieceSymbols[piece];
     const moveText = pieceSymbol + notation;
 
     if (currentPlayer === 'white') {
@@ -447,7 +469,7 @@ function recordMove(piece, targetRow, targetCol) {
                 blackPlaceholder.textContent = moveText;
             }
         }
-        moveNumber++; 
+        moveNumber++;
     }
     
     moveHistoryContainer.scrollTop = moveHistoryContainer.scrollHeight;
