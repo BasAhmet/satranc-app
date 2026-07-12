@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBIOiygyqnwcGyxnUn6tGVA4tT2_QjknIA",
@@ -21,7 +21,7 @@ const moveHistoryContainer = document.getElementById('move-history');
 let moveNumber = 1;
 let currentMoveRow = null;
 
-const initialBoard = [
+let initialBoard = [
     ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
     ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
     ['', '', '', '', '', '', '', ''],
@@ -487,8 +487,29 @@ function saveGame() {
     });
 }
 
+function listenGame() {
+    const gameRef = doc(db, "games", "oyun1");
+
+    // onSnapshot, veritabanında bir değişiklik olduğunda anında tetiklenir
+    onSnapshot(gameRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            
+            // Firebase'den gelen verileri oyunumuza aktarıyoruz
+            initialBoard = JSON.parse(data.board);
+            currentPlayer = data.turn;
+            moveNumber = data.moveCount;
+            
+            // Veriler güncellendiğine göre arayüzü baştan çizdiriyoruz
+            createBoard();
+            updateTurnIndicator();
+        }
+    });
+}
+
 // =========================================================================
 // BAŞLANGIÇ ÇALIŞTIRMALARI
 // =========================================================================
 updateTurnIndicator();
 createBoard();
+listenGame();
