@@ -102,10 +102,19 @@ btnJoinRoom.addEventListener('click', async () => {
 // 1. TAHTA OLUŞTURMA VE ÇİZİM
 // =========================================================================
 function createBoard() {
+    if (!boardContainer) return;
     boardContainer.innerHTML = '';
+
+    // Oyuncunun rolü 'black' ise tahtayı Siyahın bakış açısıyla çizeceğiz
+    // (Buradaki myRole veya playerRole değişkeninizin adını kendi projenizdeki değişkenle kontrol edin)
+    const isBlackView = (userRole === 'black');
 
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
+            // Siyah oyuncu bakış açısındaysa satır ve sütun sırasını tersten okuyoruz
+            const row = isBlackView ? 7 - row : row;
+            const col = isBlackView ? 7 - col : col;
+            
             const square = document.createElement('div');
             const isLightSquare = (row + col) % 2 === 0;
             const bgColor = isLightSquare ? 'bg-slate-200' : 'bg-slate-500';
