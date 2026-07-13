@@ -107,8 +107,8 @@ function createBoard() {
 
     // Oyuncunun rolü 'black' ise tahtayı Siyahın bakış açısıyla çizeceğiz
     let isBlackView = false;
-    if (typeof kendiRengim !== 'undefined') {
-        isBlackView = (kendiRengim === 'black');
+    if (typeof myColor !== 'undefined') {
+        isBlackView = (myColor === 'black');
     }
 
     // Döngü değişkenlerini 'r' ve 'c' yapıyoruz ki çakışma olmasın
@@ -578,11 +578,22 @@ function listenGame(roomId) {
             initialBoard = typeof data.board === 'string' ? JSON.parse(data.board) : data.board;
             currentPlayer = data.turn;
             moveNumber = data.moveCount;
-            moveHistoryList = data.history || []; // YENİ: Buluttan hamle geçmişini alıyoruz
+            moveHistoryList = data.history || []; // Buluttan hamle geçmişini alıyoruz
             
             createBoard();
             updateTurnIndicator();
-            renderMoveHistory(); // YENİ: Hamle geçmişini iki tarafta da güncelliyoruz
+            renderMoveHistory(); // Hamle geçmişini iki tarafta da güncelliyoruz
+            
+            // --- EKLENEN YENİ KISIM ---
+            // Tahta ve hamle geçmişi çizildikten hemen sonra mat durumunu iki taraf için de kontrol et
+            setTimeout(() => {
+                // Not: Kendi kodundaki mat/oyun sonu kontrol fonksiyonunun adını buraya yazmalısın.
+                // Eğer adını checkGameOver koyduysan bu şekilde kalabilir:
+                if (typeof checkGameOver === 'function') {
+                    checkGameOver(); 
+                }
+            }, 100); // 100 milisaniye gecikme veriyoruz ki önce son hamle ekranda görünsün, sonra mat uyarısı çıksın.
+            // --------------------------
         }
     });
 }
