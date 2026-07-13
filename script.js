@@ -293,27 +293,28 @@ function movePiece(targetRow, targetCol) {
 // Hamleyi bitirme, sırayı geçirme ve mat kontrolü
 function finalizeMove(piece, targetRow, targetCol) {
     recordMove(piece, targetRow, targetCol);
-
     clearSelection();
+    
     currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
     updateTurnIndicator();
     createBoard();
 
     // HAMLEYİ FIREBASE'E GÖNDERİYORUZ
     saveGame(); 
+}
 
-    setTimeout(() => {
-        if (!hasAnyValidMove(currentPlayer)) {
-            if (isKingInCheck(currentPlayer)) {
-                const winner = currentPlayer === 'white' ? 'Siyah' : 'Beyaz';
-                alert(`ŞAH MAT! ${winner} kazandı!`);
-            } else {
-                alert("PAT! Geçerli hamle yok, oyun berabere.");
-            }
-        } else if (isKingInCheck(currentPlayer)) {
-            console.log("Şah çekildi!");
+// OYUN SONU (MAT/PAT) KONTROLÜ
+function checkGameOver() {
+    if (!hasAnyValidMove(currentPlayer)) {
+        if (isKingInCheck(currentPlayer)) {
+            const winner = currentPlayer === 'white' ? 'Siyah' : 'Beyaz';
+            alert(`ŞAH MAT! ${winner} kazandı!`);
+        } else {
+            alert("PAT! Geçerli hamle yok, oyun berabere.");
         }
-    }, 10);
+    } else if (isKingInCheck(currentPlayer)) {
+        console.log("Şah çekildi!");
+    }
 }
 
 function updateTurnIndicator() {
