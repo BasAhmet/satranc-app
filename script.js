@@ -107,7 +107,10 @@ function createBoard() {
 
     // Oyuncunun rolü 'black' ise tahtayı Siyahın bakış açısıyla çizeceğiz
     // (Buradaki myRole veya playerRole değişkeninizin adını kendi projenizdeki değişkenle kontrol edin)
-    const isBlackView = (userRole === 'black');
+    let isBlackView = false;
+    if (typeof kendiRengim !== 'undefined') {
+        isBlackView = (kendiRengim === 'black');
+    }
 
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
