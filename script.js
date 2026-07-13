@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBIOiygyqnwcGyxnUn6tGVA4tT2_QjknIA",
@@ -40,6 +40,62 @@ const pieceSymbols = {
 let selectedSquare = null;
 let currentPlayer = 'white';
 let lastMove = null;
+let myColor = null;       // Oyuncunun kendi rengi ('white' veya 'black')
+let currentRoomId = null; // Oynanan odanın kodu
+
+// =========================================================================
+// 0. LOBİ VE ODA YÖNETİMİ
+// =========================================================================
+const lobbyScreen = document.getElementById('lobby-screen');
+const btnCreateRoom = document.getElementById('btn-create-room');
+const btnJoinRoom = document.getElementById('btn-join-room');
+const inputRoomCode = document.getElementById('input-room-code');
+
+// ODA KURMA (BEYAZ OYUNCU)
+btnCreateRoom.addEventListener('click', async () => {
+    currentRoomId = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 haneli rastgele kod
+    myColor = 'white';
+    
+    const gameRef = doc(db, "games", currentRoomId);
+    await setDoc(gameRef, {
+        board: JSON.stringify(initialBoard),
+        turn: 'white',
+        moveCount: 1,
+        playerBlackJoined: false // Siyahın katılıp katılmadığını takip için
+    });
+    
+    lobbyScreen.classList.add('hidden');
+    alert(`ODA KODUNUZ: ${currentRoomId}\n\nArkadaşınıza bu kodu gönderin ve Siyah olarak katılmasını bekleyin.`);
+    listenGame(currentRoomId);
+});
+
+// ODAYA KATILMA (SİYAH OYUNCU)
+btnJoinRoom.addEventListener('click', async () => {
+    const code = inputRoomCode.value.trim().toUpperCase();
+    if (!code) return alert("Lütfen bir oda kodu girin!");
+    
+    const gameRef = doc(db, "games", code);
+    const gameSnap = await getDoc(gameRef);
+    
+    if (gameSnap.exists()) {
+        const data = gameSnap.data();
+        if (!data.playerBlackJoined) {
+            myColor = 'black';
+            currentRoomId = code;
+            
+            // Firebase'de odayı 'Siyah da katıldı' olarak güncelle
+            await setDoc(gameRef, { playerBlackJoined: true }, { merge: true });
+            
+            lobbyScreen.classList.add('hidden');
+            alert(`Odaya Siyah olarak katıldınız! İlk hamle Beyazın.`);
+            listenGame(currentRoomId);
+        } else {
+            alert("Bu oda zaten dolu, iki kişi oynuyor!");
+        }
+    } else {
+        alert("Böyle bir oda kodu bulunamadı!");
+    }
+});
 
 // =========================================================================
 // 1. TAHTA OLUŞTURMA VE ÇİZİM
@@ -134,7 +190,9 @@ function handleSquareClick(event) {
     const row = parseInt(square.dataset.row);
     const col = parseInt(square.dataset.col);
     const pieceAtSquare = initialBoard[row][col];
-
+    
+    if (currentPlayer !== myColor) return;
+    
     if (!selectedSquare) {
         if (pieceAtSquare && isPieceCurrentPlayers(pieceAtSquare)) {
             selectSquare(square, row, col);
@@ -473,7 +531,7 @@ function recordMove(piece, targetRow, targetCol) {
 // =========================================================================
 function saveGame() {
     // games koleksiyonu altında oyun1 belgesini hedefliyoruz
-    const gameRef = doc(db, "games", "oyun1"); 
+    const gameRef = doc(db, "games", currentRoomId);
 
     setDoc(gameRef, {
         board: JSON.stringify(initialBoard), 
@@ -487,20 +545,16 @@ function saveGame() {
     });
 }
 
-function listenGame() {
-    const gameRef = doc(db, "games", "oyun1");
+// listenGame fonksiyonunu şu şekilde değiştir:
+function listenGame(roomId) {
+    const gameRef = doc(db, "games", roomId);
 
-    // onSnapshot, veritabanında bir değişiklik olduğunda anında tetiklenir
     onSnapshot(gameRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            
-            // Firebase'den gelen verileri oyunumuza aktarıyoruz
             initialBoard = JSON.parse(data.board);
             currentPlayer = data.turn;
             moveNumber = data.moveCount;
-            
-            // Veriler güncellendiğine göre arayüzü baştan çizdiriyoruz
             createBoard();
             updateTurnIndicator();
         }
@@ -512,4 +566,3 @@ function listenGame() {
 // =========================================================================
 updateTurnIndicator();
 createBoard();
-listenGame();
