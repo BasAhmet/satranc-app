@@ -13,11 +13,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-// === MEVCUT KODLARIN BURADAN İTİBAREN BAŞLAYACAK ===
 const boardContainer = document.getElementById('board-container');
 const turnIndicator = document.getElementById('turn-indicator');
 const moveHistoryContainer = document.getElementById('move-history');
+const btnRestart = document.getElementById('btn-restart');
+
 let moveNumber = 1;
 let currentMoveRow = null;
 
@@ -43,6 +43,39 @@ let lastMove = null;
 let moveHistoryList = []; // Tüm hamle notasyonlarını tutacak listemiz
 let myColor = null;       // Oyuncunun kendi rengi ('white' veya 'black')
 let currentRoomId = null; // Oynanan odanın kodu
+
+if (btnRestart) {
+    btnRestart.addEventListener('click', async () => {
+        // Eğer bir odaya henüz girilmediyse buton çalışmasın
+        if (!currentRoomId) return; 
+
+        // Yanlışlıkla basmalara karşı küçük bir onay alalım
+        const onay = confirm("Oyunu sıfırlayıp yeni bir maça başlamak istediğinize emin misiniz?");
+        if (!onay) return;
+
+        // Tahtanın ilk (başlangıç) halini yepyeni bir dizi olarak oluşturuyoruz
+        const startingBoard = [
+            ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+            ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+            ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+        ];
+
+        // Sadece Firebase'deki odayı başlangıç ayarlarına güncelliyoruz.
+        // DİKKAT: 'playerBlackJoined' verisine dokunmuyoruz ki oyuncular odadan atılmasın!
+        const gameRef = doc(db, "games", currentRoomId);
+        await setDoc(gameRef, {
+            board: JSON.stringify(startingBoard), // Tahtayı sıfırla
+            turn: 'white',                        // Sırayı tekrar Beyaz'a ver
+            moveCount: 1,                         // Hamle sayısını sıfırla
+            history: []                           // Hamle geçmişini boşalt
+        }, { merge: true }); 
+    });
+}
 
 // =========================================================================
 // 0. LOBİ VE ODA YÖNETİMİ
