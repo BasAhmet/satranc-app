@@ -106,17 +106,17 @@ function createBoard() {
     boardContainer.innerHTML = '';
 
     // Oyuncunun rolü 'black' ise tahtayı Siyahın bakış açısıyla çizeceğiz
-    // (Buradaki myRole veya playerRole değişkeninizin adını kendi projenizdeki değişkenle kontrol edin)
     let isBlackView = false;
     if (typeof kendiRengim !== 'undefined') {
         isBlackView = (kendiRengim === 'black');
     }
 
-    for (let row = 0; row < 8; row++) {
-        for (let col = 0; col < 8; col++) {
+    // Döngü değişkenlerini 'r' ve 'c' yapıyoruz ki çakışma olmasın
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
             // Siyah oyuncu bakış açısındaysa satır ve sütun sırasını tersten okuyoruz
-            const row = isBlackView ? 7 - row : row;
-            const col = isBlackView ? 7 - col : col;
+            const row = isBlackView ? 7 - r : r;
+            const col = isBlackView ? 7 - c : c;
             
             const square = document.createElement('div');
             const isLightSquare = (row + col) % 2 === 0;
@@ -142,7 +142,8 @@ function createBoard() {
                 square.classList.add('bg-yellow-400'); 
             }
 
-            if (row === 7) {
+            // Sütun Harfleri (a-h) -> Görsel olarak en alt sıraya eklenir
+            if (r === 7) {
                 const fileLabel = document.createElement('span');
                 fileLabel.textContent = String.fromCharCode(97 + col); 
                 const textColor = isLightSquare ? 'text-slate-500' : 'text-slate-200';
@@ -150,7 +151,8 @@ function createBoard() {
                 square.appendChild(fileLabel);
             }
 
-            if (col === 7) {
+            // Satır Sayıları (1-8) -> Görsel olarak en sağ sütuna eklenir
+            if (c === 7) {
                 const rankLabel = document.createElement('span');
                 rankLabel.textContent = 8 - row; 
                 const textColor = isLightSquare ? 'text-slate-500' : 'text-slate-200';
