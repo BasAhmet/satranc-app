@@ -40,6 +40,7 @@ const pieceSymbols = {
 let selectedSquare = null;
 let currentPlayer = 'white';
 let lastMove = null;
+let moveHistoryList = []; // Tüm hamle notasyonlarını tutacak listemiz
 let myColor = null;       // Oyuncunun kendi rengi ('white' veya 'black')
 let currentRoomId = null; // Oynanan odanın kodu
 
@@ -483,45 +484,50 @@ function getAlgebraicNotation(row, col) {
 }
 
 function recordMove(piece, targetRow, targetCol) {
-    if(!moveHistoryContainer) return;
     const notation = getAlgebraicNotation(targetRow, targetCol);
     const pieceSymbol = piece.toLowerCase() === 'p' ? '' : pieceSymbols[piece];
     const moveText = pieceSymbol + notation;
 
-    if (currentPlayer === 'white') {
-        currentMoveRow = document.createElement('div');
-        currentMoveRow.className = 'flex shrink-0 w-32 md:w-auto md:justify-between border-r md:border-r-0 md:border-b border-slate-200 pr-2 md:pr-0 md:pb-1 md:mb-1 mr-2 md:mr-0 items-center';
-        
-        const moveNumSpan = document.createElement('span');
-        moveNumSpan.className = 'text-slate-400 w-6 font-bold text-xs';
-        moveNumSpan.textContent = moveNumber + '.';
+    // Hamleyi ana dizimize ekliyoruz
+    moveHistoryList.push(moveText);
+}
 
-        const whiteMoveSpan = document.createElement('span');
-        whiteMoveSpan.className = 'w-10 font-medium text-left';
-        whiteMoveSpan.textContent = moveText;
+function renderMoveHistory() {
+    if (!moveHistoryContainer) return;
+    moveHistoryContainer.innerHTML = ''; // Önceki listeyi temizle
 
-        const blackMovePlaceholder = document.createElement('span');
-        blackMovePlaceholder.className = 'w-10 text-right black-move-placeholder text-transparent';
-        blackMovePlaceholder.textContent = '...'; 
+    for (let i = 0; i < moveHistoryList.length; i += 2) {
+        const moveNum = Math.floor(i / 2) + 1;
+        const whiteMove = moveHistoryList[i];
+        const blackMove = moveHistoryList[i + 1] || '';
 
-        currentMoveRow.appendChild(moveNumSpan);
-        currentMoveRow.appendChild(whiteMoveSpan);
-        currentMoveRow.appendChild(blackMovePlaceholder);
-        
-        moveHistoryContainer.appendChild(currentMoveRow);
-        
-    } else {
-        if (currentMoveRow) {
-            const blackPlaceholder = currentMoveRow.querySelector('.black-move-placeholder');
-            if (blackPlaceholder) {
-                blackPlaceholder.classList.remove('black-move-placeholder', 'text-transparent');
-                blackPlaceholder.classList.add('font-medium', 'text-slate-800');
-                blackPlaceholder.textContent = moveText;
-            }
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'flex shrink-0 w-32 md:w-auto md:justify-between border-r md:border-r-0 md:border-b border-slate-200 pr-2 md:pr-0 md:pb-1 md:mb-1 mr-2 md:mr-0 items-center';
+
+        const numSpan = document.createElement('span');
+        numSpan.className = 'text-slate-400 w-6 font-bold text-xs';
+        numSpan.textContent = moveNum + '.';
+
+        const whiteSpan = document.createElement('span');
+        whiteSpan.className = 'w-10 font-medium text-left';
+        whiteSpan.textContent = whiteMove;
+
+        const blackSpan = document.createElement('span');
+        if (blackMove) {
+            blackSpan.className = 'w-10 font-medium text-slate-800 text-right';
+            blackSpan.textContent = blackMove;
+        } else {
+            blackSpan.className = 'w-10 text-right black-move-placeholder text-transparent';
+            blackSpan.textContent = '...';
         }
-        moveNumber++;
+
+        rowDiv.appendChild(numSpan);
+        rowDiv.appendChild(whiteSpan);
+        rowDiv.appendChild(blackSpan);
+        moveHistoryContainer.appendChild(rowDiv);
     }
-    
+
+    // Listeyi en aşağı kaydır
     moveHistoryContainer.scrollTop = moveHistoryContainer.scrollHeight;
     moveHistoryContainer.scrollLeft = moveHistoryContainer.scrollWidth;
 }
@@ -530,15 +536,17 @@ function recordMove(piece, targetRow, targetCol) {
 // 5. FIREBASE VERİTABANI İŞLEMLERİ
 // =========================================================================
 function saveGame() {
+    if (!currentRoomId) return;
     // games koleksiyonu altında oyun1 belgesini hedefliyoruz
     const gameRef = doc(db, "games", currentRoomId);
 
     setDoc(gameRef, {
         board: JSON.stringify(initialBoard), 
         turn: currentPlayer,       
-        moveCount: moveNumber,     
+        moveCount: moveNumber,
+        history: moveHistoryList, // YENİ: Hamle geçmişi listesini Firebase'e gönderiyoruz
         lastUpdate: new Date()     
-    }).then(() => {
+    }, { merge: true }).then(() => {
         console.log("Harika! Hamle başarıyla Firebase'e kaydedildi!");
     }).catch(e => {
         console.error("Firebase'e kaydederken hata oluştu:", e);
@@ -552,11 +560,15 @@ function listenGame(roomId) {
     onSnapshot(gameRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            initialBoard = JSON.parse(data.board);
+            
+            initialBoard = typeof data.board === 'string' ? JSON.parse(data.board) : data.board;
             currentPlayer = data.turn;
             moveNumber = data.moveCount;
+            moveHistoryList = data.history || []; // YENİ: Buluttan hamle geçmişini alıyoruz
+            
             createBoard();
             updateTurnIndicator();
+            renderMoveHistory(); // YENİ: Hamle geçmişini iki tarafta da güncelliyoruz
         }
     });
 }
