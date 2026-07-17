@@ -38,6 +38,10 @@
         
         <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Satranç Platformu</h1>
         <p class="text-gray-500">Hamle hesaplamaları, zeka bulmacaları ve karşılıklı maçlar.</p>
+        <!-- Oda kodunu maç esnasında göstereceğimiz yeni alan -->
+<div id="room-code-display" class="text-sm text-slate-600 mb-2 hidden text-center">
+    Oda Kodu: <span id="room-code-text" class="font-bold text-indigo-600 bg-slate-100 px-2 py-0.5 rounded select-all cursor-pointer" title="Kopyalamak için tıklayın">----</span>
+</div>
         <p id="turn-indicator" class="text-lg font-semibold text-slate-900">Sıra: <span class="text-slate-800">Beyaz</span></p>
         <button id="btn-restart" class="bg-indigo-600 text-white px-6 py-2 rounded-md font-bold hover:bg-indigo-700 transition-colors shadow-sm">
             🔄 Yeni Oyun / Rövanş
