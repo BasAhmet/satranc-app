@@ -74,6 +74,7 @@ if (btnRestart) {
             initialBoard = startingBoard;
             currentPlayer = 'white';
             moveHistoryList = [];
+            lastMove = null; // YENİ: Yerel maç rövanşında sıfırla
             createBoard();
             updateTurnIndicator();
             renderMoveHistory();
@@ -85,6 +86,7 @@ if (btnRestart) {
                 turn: 'white',
                 moveCount: 1,
                 history: []
+                lastMove: null // YENİ: Online maç rövanşında sıfırla
             }, { merge: true }); 
         }
     });
@@ -175,6 +177,7 @@ if (btnLocalPlay) {
         // Oyunu yerel olarak sıfırla ve başlat
         currentPlayer = 'white';
         moveHistoryList = [];
+        lastMove = null; // YENİ: Yerel maça başlarken son hamleyi sıfırla
         updateTurnIndicator();
         createBoard();
     });
@@ -202,7 +205,13 @@ function createBoard() {
             
             const square = document.createElement('div');
             const isLightSquare = (row + col) % 2 === 0;
-            const bgColor = isLightSquare ? 'bg-slate-200' : 'bg-slate-500';
+            let bgColor = isLightSquare ? 'bg-slate-200' : 'bg-slate-500';
+
+            // YENİ: Eğer bu kare, son hamlenin başlangıç veya bitiş karesiyse rengini sarımsı/yeşilimsi yap
+            if (lastMove && ((row === lastMove.startRow && col === lastMove.startCol) || (row === lastMove.targetRow && col === lastMove.targetCol))) {
+                // Açık kareler için pastel sarı, koyu kareler için biraz daha koyu bir sarı/turuncu tonu
+                bgColor = isLightSquare ? 'bg-yellow-100' : 'bg-yellow-300'; 
+            }
 
             square.className = `w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 flex justify-center items-center relative ${bgColor}`;
             square.dataset.row = row;
@@ -660,6 +669,7 @@ function saveGame() {
         turn: currentPlayer,       
         moveCount: moveNumber,
         history: moveHistoryList, // YENİ: Hamle geçmişi listesini Firebase'e gönderiyoruz
+        lastMove: lastMove,   // YENİ: Son hamleyi Firebase'e gönderiyoruz
         lastUpdate: new Date()     
     }, { merge: true }).then(() => {
         console.log("Harika! Hamle başarıyla Firebase'e kaydedildi!");
@@ -680,6 +690,7 @@ function listenGame(roomId) {
             currentPlayer = data.turn;
             moveNumber = data.moveCount;
             moveHistoryList = data.history || []; // Buluttan hamle geçmişini alıyoruz
+            lastMove = data.lastMove || null; // YENİ: Buluttan son hamleyi alıyoruz
             
             createBoard();
             updateTurnIndicator();
