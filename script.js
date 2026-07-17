@@ -865,7 +865,7 @@ function makeBotMove() {
                 initialBoard[move.startRow][move.startCol] = '';
 
                 // B. Tahtanın yeni durumunu puanla
-                const currentScore = evaluateBoard();
+                const currentScore = evaluateBoard(botLevel);
 
                 // C. Hamleyi geri al (Orijinal tahtayı bozmamak için)
                 initialBoard[move.startRow][move.startCol] = pieceToMove;
@@ -892,20 +892,80 @@ function makeBotMove() {
     }, 600);
 }
 
-// Tahtanın o anki puanını hesaplar (Siyah taşlar +, Beyaz taşlar - puan)
-function evaluateBoard() {
+// Tahtanın o anki puanını hesaplar (Seviyeye göre farklılaşır)
+function evaluateBoard(level) {
     let totalEvaluation = 0;
-    // Satrançtaki evrensel taş değerleri (Şah için ulaşılamaz yüksek bir değer verilir)
+    
+    // 1. Taşların Temel Değerleri (Hassas hesap yapabilmek için puanları 10 ile çarptık)
     const pieceValues = {
-        'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9, 'k': 1000,   // Siyah (Bot) taşları puan kazandırır
-        'P': -1, 'N': -3, 'B': -3, 'R': -5, 'Q': -9, 'K': -1000 // Beyaz (Oyuncu) taşları puan eksiltir
+        'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 9000,   // Siyah
+        'P': -10, 'N': -30, 'B': -30, 'R': -50, 'Q': -90, 'K': -9000 // Beyaz
+    };
+
+    // 2. Konum Matrisleri (Sadece 3. Seviye ve üstü için)
+    // Matrisler siyah taşların bakış açısına (yukarıdan aşağıya) göre ayarlanmıştır.
+    const positionBonus = {
+        'p': [ // Piyonlar: İleri gitmek ve merkeze tutunmak iyidir
+            [0,  0,  0,  0,  0,  0,  0,  0],
+            [5,  5,  5,  5,  5,  5,  5,  5],
+            [1,  1,  2,  3,  3,  2,  1,  1],
+            [0,  0,  1,  2,  2,  1,  0,  0],
+            [0,  0,  0,  2,  2,  0,  0,  0],
+            [0, -1, -1,  0,  0, -1, -1,  0],
+            [0,  1,  1, -2, -2,  1,  1,  0],
+            [0,  0,  0,  0,  0,  0,  0,  0]
+        ],
+        'n': [ // Atlar: Kesinlikle merkezde olmalı, kenarlar çok kötü
+            [-5, -4, -3, -3, -3, -3, -4, -5],
+            [-4, -2,  0,  0,  0,  0, -2, -4],
+            [-3,  0,  1,  1,  1,  1,  0, -3],
+            [-3,  0,  1,  2,  2,  1,  0, -3],
+            [-3,  0,  1,  2,  2,  1,  0, -3],
+            [-3,  0,  1,  1,  1,  1,  0, -3],
+            [-4, -2,  0,  0,  0,  0, -2, -4],
+            [-5, -4, -3, -3, -3, -3, -4, -5]
+        ],
+        'b': [ // Filler: Çaprazlara ve merkeze hakim olmalı
+            [-2, -1, -1, -1, -1, -1, -1, -2],
+            [-1,  0,  0,  0,  0,  0,  0, -1],
+            [-1,  0,  0,  1,  1,  0,  0, -1],
+            [-1,  0,  1,  1,  1,  1,  0, -1],
+            [-1,  0,  1,  1,  1,  1,  0, -1],
+            [-1,  0,  0,  1,  1,  0,  0, -1],
+            [-1,  0,  0,  0,  0,  0,  0, -1],
+            [-2, -1, -1, -1, -1, -1, -1, -2]
+        ],
+        'k': [ // Şah: Erken/Orta oyunda köşelerde güvende olmalı
+            [ 2,  3,  1,  0,  0,  1,  3,  2],
+            [ 2,  2,  0,  0,  0,  0,  2,  2],
+            [-1, -2, -2, -2, -2, -2, -2, -1],
+            [-2, -3, -3, -4, -4, -3, -3, -2],
+            [-3, -4, -4, -5, -5, -4, -4, -3],
+            [-3, -4, -4, -5, -5, -4, -4, -3],
+            [-3, -4, -4, -5, -5, -4, -4, -3],
+            [-3, -4, -4, -5, -5, -4, -4, -3]
+        ]
     };
     
     for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
             const piece = initialBoard[r][c];
             if (piece !== '') {
+                // Taşı ye, temel puanını al
                 totalEvaluation += pieceValues[piece];
+                
+                // Eğer seviye 3 veya üzeriyse KONUM PUANLARINI da hesaba kat
+                if (level >= 3) {
+                    const pieceLower = piece.toLowerCase();
+                    if (positionBonus[pieceLower]) {
+                        // Siyah taşlar için matrisi düz oku, Beyaz taşlar için ters çevir (7-r) oku
+                        const isBlack = (piece === pieceLower);
+                        const row = isBlack ? r : (7 - r); 
+                        const bonus = positionBonus[pieceLower][row][c];
+                        
+                        totalEvaluation += isBlack ? bonus : -bonus;
+                    }
+                }
             }
         }
     }
