@@ -85,7 +85,7 @@ if (btnRestart) {
                 board: JSON.stringify(startingBoard),
                 turn: 'white',
                 moveCount: 1,
-                history: []
+                history: [],
                 lastMove: null // YENİ: Online maç rövanşında sıfırla
             }, { merge: true }); 
         }
