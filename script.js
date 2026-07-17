@@ -52,7 +52,7 @@ let isBotPlay = false; // YENİ: Bota karşı oynama modu kontrolü
 if (btnRestart) {
     btnRestart.addEventListener('click', async () => {
         // Eğer bir odaya henüz girilmediyse buton çalışmasın
-        if (!currentRoomId && !isLocalPlay) return; 
+        if (!currentRoomId && !isLocalPlay && !isBotPlay) return; 
 
         // Yanlışlıkla basmalara karşı küçük bir onay alalım
         const onay = confirm("Oyunu sıfırlayıp yeni bir maça başlamak istediğinize emin misiniz?");
@@ -430,7 +430,7 @@ function finalizeMove(piece, targetRow, targetCol) {
     updateTurnIndicator();
     createBoard();
 
-   if (!isLocalPlay) {
+   if (!isLocalPlay && !isBotPlay) {
         // Online oyunda Firebase'e kaydet
         saveGame(); //
     } else {
