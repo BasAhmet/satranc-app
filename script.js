@@ -48,9 +48,12 @@ let currentRoomId = null; // Oynanan odanın kodu
 let isLocalPlay = false;  // YENİ: Aynı cihazda oynama modu kontrolü
 let rotateBlackPieces = false; // YENİ: Siyah taşları döndürme tercihi
 let isBotPlay = false; // YENİ: Bota karşı oynama modu kontrolü
+// YENİ: Rok haklarını (Hafıza) tutan değişken
+let castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
 
 if (btnRestart) {
     btnRestart.addEventListener('click', async () => {
+        castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
         // Eğer bir odaya henüz girilmediyse buton çalışmasın
         if (!currentRoomId && !isLocalPlay && !isBotPlay) return; 
 
@@ -107,6 +110,7 @@ const btnBotPlay = document.getElementById('btn-bot-play');
 // BOTA KARŞI MAÇ BAŞLATMA BUTTONU
 if (btnBotPlay) {
     btnBotPlay.addEventListener('click', () => {
+        castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
         isBotPlay = true;
         isLocalPlay = false; // Yerel oyun değil
         myColor = 'white';   // Oyuncu her zaman Beyaz olsun
@@ -185,6 +189,7 @@ btnJoinRoom.addEventListener('click', async () => {
 // YEREL MAÇ BAŞLATMA BUTTONU
 if (btnLocalPlay) {
     btnLocalPlay.addEventListener('click', () => {
+        castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
         isLocalPlay = true;
         myColor = 'local'; 
         
@@ -382,6 +387,14 @@ function clearSelection() {
 function movePiece(targetRow, targetCol) {
     const pieceToMove = initialBoard[selectedSquare.row][selectedSquare.col];
 
+    // YENİ: ROK HAFIZA GÜNCELLEMESİ (Taş oynarsa hak iptal olur)
+    if (pieceToMove === 'K') { castlingRights.wK = false; castlingRights.wQ = false; }
+    if (pieceToMove === 'k') { castlingRights.bK = false; castlingRights.bQ = false; }
+    if (pieceToMove === 'R' && selectedSquare.row === 7 && selectedSquare.col === 7) castlingRights.wK = false;
+    if (pieceToMove === 'R' && selectedSquare.row === 7 && selectedSquare.col === 0) castlingRights.wQ = false;
+    if (pieceToMove === 'r' && selectedSquare.row === 0 && selectedSquare.col === 7) castlingRights.bK = false;
+    if (pieceToMove === 'r' && selectedSquare.row === 0 && selectedSquare.col === 0) castlingRights.bQ = false;
+
     // Rok (Castling)
     if (pieceToMove.toLowerCase() === 'k' && Math.abs(targetCol - selectedSquare.col) === 2) {
         const isKingside = targetCol > selectedSquare.col;
@@ -504,6 +517,19 @@ function isKingInCheck(color) {
     return false;
 }
 
+// YENİ: Belirli bir karenin rakip tarafından tehdit edilip edilmediğini tarar
+function isSquareAttacked(targetRow, targetCol, defendingColor) {
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = initialBoard[r][c];
+            if (piece !== '' && !isPieceColor(piece, defendingColor)) {
+                if (isValidMove(r, c, targetRow, targetCol)) return true;
+            }
+        }
+    }
+    return false;
+}
+
 function isValidMove(startRow, startCol, targetRow, targetCol) {
     const piece = initialBoard[startRow][startCol];
     const type = piece.toLowerCase();
@@ -588,17 +614,41 @@ function validateKingMove(startRow, startCol, targetRow, targetCol) {
     const colDiff = Math.abs(startCol - targetCol);
 
     if (rowDiff <= 1 && colDiff <= 1) return true;
+    
+    // ROK (Castling) KONTROLÜ
     if (rowDiff === 0 && colDiff === 2) {
+        if (startCol !== 4) return false;
+
+        const isWhite = initialBoard[startRow][startCol] === 'K';
+        const color = isWhite ? 'white' : 'black';
         const isKingside = targetCol > startCol;
-        const rookCol = isKingside ? 7 : 0;
         
-        if (initialBoard[startRow][rookCol].toLowerCase() === 'r') {
+        // 1. ŞART: HAFIZA KONTROLÜ (Şah veya o yöndeki Kale daha önce oynamış mı?)
+        if (isWhite) {
+            if (isKingside && !castlingRights.wK) return false;
+            if (!isKingside && !castlingRights.wQ) return false;
+        } else {
+            if (isKingside && !castlingRights.bK) return false;
+            if (!isKingside && !castlingRights.bQ) return false;
+        }
+
+        const rookCol = isKingside ? 7 : 0;
+        const myRook = isWhite ? 'R' : 'r';
+        
+        if (initialBoard[startRow][rookCol] === myRook) {
             const step = isKingside ? 1 : -1;
             let checkCol = startCol + step;
+            
+            // 2. ŞART: ARA KARELER BOŞ MU?
             while (checkCol !== rookCol) {
                 if (initialBoard[startRow][checkCol] !== '') return false;
                 checkCol += step;
             }
+            
+            // 3. ŞART: GÜVENLİK KONTROLLERİ
+            if (isKingInCheck(color)) return false; // Şah çekilmişken rok atılamaz
+            if (isSquareAttacked(startRow, startCol + step, color)) return false; // Ara kare tehdit altında olamaz
+            
             return true;
         }
     }
@@ -706,7 +756,8 @@ function saveGame() {
         moveCount: moveNumber,
         history: moveHistoryList, // YENİ: Hamle geçmişi listesini Firebase'e gönderiyoruz
         lastMove: lastMove,   // YENİ: Son hamleyi Firebase'e gönderiyoruz
-        lastUpdate: new Date()     
+        castlingRights: castlingRights,
+        lastUpdate: new Date()    
     }, { merge: true }).then(() => {
         console.log("Harika! Hamle başarıyla Firebase'e kaydedildi!");
     }).catch(e => {
@@ -727,6 +778,7 @@ function listenGame(roomId) {
             moveNumber = data.moveCount;
             moveHistoryList = data.history || []; // Buluttan hamle geçmişini alıyoruz
             lastMove = data.lastMove || null; // YENİ: Buluttan son hamleyi alıyoruz
+            castlingRights = data.castlingRights || { wK: true, wQ: true, bK: true, bQ: true };
             
             createBoard();
             updateTurnIndicator();
