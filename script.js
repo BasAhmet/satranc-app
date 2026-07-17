@@ -47,6 +47,7 @@ let myColor = null;       // Oyuncunun kendi rengi ('white' veya 'black')
 let currentRoomId = null; // Oynanan odanın kodu
 let isLocalPlay = false;  // YENİ: Aynı cihazda oynama modu kontrolü
 let rotateBlackPieces = false; // YENİ: Siyah taşları döndürme tercihi
+let isBotPlay = false; // YENİ: Bota karşı oynama modu kontrolü
 
 if (btnRestart) {
     btnRestart.addEventListener('click', async () => {
@@ -69,7 +70,7 @@ if (btnRestart) {
             ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
         ];
 
-        if (isLocalPlay) {
+        if (isLocalPlay || isBotPlay) {
             // Yerel oyunda direkt lokal değişkenleri sıfırla
             initialBoard = startingBoard;
             currentPlayer = 'white';
@@ -78,6 +79,7 @@ if (btnRestart) {
             createBoard();
             updateTurnIndicator();
             renderMoveHistory();
+            console.log("Yerel/Bot maçı başarıyla sıfırlandı!");
         } else {
             // Online oyunda Firebase'i sıfırla
             const gameRef = doc(db, "games", currentRoomId);
@@ -100,6 +102,29 @@ const btnCreateRoom = document.getElementById('btn-create-room');
 const btnJoinRoom = document.getElementById('btn-join-room');
 const inputRoomCode = document.getElementById('input-room-code');
 const btnLocalPlay = document.getElementById('btn-local-play');
+const btnBotPlay = document.getElementById('btn-bot-play');
+
+// BOTA KARŞI MAÇ BAŞLATMA BUTTONU
+if (btnBotPlay) {
+    btnBotPlay.addEventListener('click', () => {
+        isBotPlay = true;
+        isLocalPlay = false; // Yerel oyun değil
+        myColor = 'white';   // Oyuncu her zaman Beyaz olsun
+        
+        lobbyScreen.classList.add('hidden');
+        
+        if (roomCodeDisplay && roomCodeText) {
+            roomCodeText.textContent = "🤖 Bot Maçı (Kolay)";
+            roomCodeDisplay.classList.remove('hidden');
+        }
+        
+        currentPlayer = 'white';
+        moveHistoryList = [];
+        lastMove = null;
+        updateTurnIndicator();
+        createBoard();
+    });
+}
 
 // ODA KURMA (BEYAZ OYUNCU)
 btnCreateRoom.addEventListener('click', async () => {
@@ -380,8 +405,15 @@ function movePiece(targetRow, targetCol) {
     const isWhitePromotion = (pieceToMove === 'P' && targetRow === 0);
     const isBlackPromotion = (pieceToMove === 'p' && targetRow === 7);
 
+    // movePiece fonksiyonu içindeki terfi kontrol alanını şu şekilde güncelle:
     if (isWhitePromotion || isBlackPromotion) {
-        showPromotionModal(currentPlayer, targetRow, targetCol);
+        if (isBotPlay && currentPlayer === 'black') {
+            // Bot ise direkt Vezir yap ve modal açma
+            initialBoard[targetRow][targetCol] = 'q';
+            finalizeMove('q', targetRow, targetCol);
+        } else {
+            showPromotionModal(currentPlayer, targetRow, targetCol);
+        }
         clearSelection();
         return; 
     }
@@ -409,6 +441,10 @@ function finalizeMove(piece, targetRow, targetCol) {
                 checkGameOver();
             }
         }, 100);
+    }
+    // finalizeMove fonksiyonunun en sonuna, if(!isLocalPlay) kontrolünün hemen altına ekle:
+    if (isBotPlay && currentPlayer === 'black') {
+        makeBotMove();
     }
 }
 
@@ -708,6 +744,58 @@ function listenGame(roomId) {
             // --------------------------
         }
     });
+}
+
+// Bot için o anki tüm kurallı hamleleri toplayan fonksiyon
+function getAllValidMoves(color) {
+    let validMoves = [];
+    for (let startRow = 0; startRow < 8; startRow++) {
+        for (let startCol = 0; startCol < 8; startCol++) {
+            const piece = initialBoard[startRow][startCol];
+            if (piece !== '' && isPieceColor(piece, color)) {
+                for (let targetRow = 0; targetRow < 8; targetRow++) {
+                    for (let targetCol = 0; targetCol < 8; targetCol++) {
+                        const targetPiece = initialBoard[targetRow][targetCol];
+                        if (targetPiece !== '' && isPieceColor(targetPiece, color)) continue;
+                        
+                        if (isValidMove(startRow, startCol, targetRow, targetCol)) {
+                            const originalTargetPiece = initialBoard[targetRow][targetCol];
+                            initialBoard[targetRow][targetCol] = piece;
+                            initialBoard[startRow][startCol] = '';
+
+                            const isSafe = !isKingInCheck(color);
+
+                            initialBoard[startRow][startCol] = piece;
+                            initialBoard[targetRow][targetCol] = originalTargetPiece;
+                            
+                            if (isSafe) {
+                                validMoves.push({ startRow, startCol, targetRow, targetCol, piece });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return validMoves;
+}
+
+// Botun hamle yapmasını sağlayan ana tetikleyici
+function makeBotMove() {
+    if (!isBotPlay || currentPlayer !== 'black') return;
+
+    // Bota 600ms kadar küçük bir düşünme süresi verelim ki hamle pat diye gelmesin
+    setTimeout(() => {
+        const legalMoves = getAllValidMoves('black');
+        if (legalMoves.length === 0) return; // Mat veya pat durumunu zaten checkGameOver çözecek
+
+        // Şimdilik mevcut kurallı hamlelerden rastgele birini seçtiriyoruz
+        const chosenMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+
+        // Seçimi simüle edip hamleyi tetikliyoruz
+        selectedSquare = { row: chosenMove.startRow, col: chosenMove.startCol };
+        movePiece(chosenMove.targetRow, chosenMove.targetCol);
+    }, 600);
 }
 
 // =========================================================================
