@@ -17,6 +17,8 @@ const boardContainer = document.getElementById('board-container');
 const turnIndicator = document.getElementById('turn-indicator');
 const moveHistoryContainer = document.getElementById('move-history');
 const btnRestart = document.getElementById('btn-restart');
+const roomCodeDisplay = document.getElementById('room-code-display');
+const roomCodeText = document.getElementById('room-code-text');
 
 let moveNumber = 1;
 let currentMoveRow = null;
@@ -89,6 +91,11 @@ const inputRoomCode = document.getElementById('input-room-code');
 btnCreateRoom.addEventListener('click', async () => {
     currentRoomId = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 haneli rastgele kod
     myColor = 'white';
+    // ... lobbyScreen.classList.add('hidden'); satırının hemen altına ekle:
+    if (roomCodeDisplay && roomCodeText) {
+        roomCodeText.textContent = currentRoomId;
+        roomCodeDisplay.classList.remove('hidden');
+    }
     
     const gameRef = doc(db, "games", currentRoomId);
     await setDoc(gameRef, {
@@ -107,6 +114,11 @@ btnCreateRoom.addEventListener('click', async () => {
 btnJoinRoom.addEventListener('click', async () => {
     const code = inputRoomCode.value.trim().toUpperCase();
     if (!code) return alert("Lütfen bir oda kodu girin!");
+    // ... lobbyScreen.classList.add('hidden'); satırının hemen altına ekle:
+    if (roomCodeDisplay && roomCodeText) {
+        roomCodeText.textContent = code;
+        roomCodeDisplay.classList.remove('hidden');
+    }
     
     const gameRef = doc(db, "games", code);
     const gameSnap = await getDoc(gameRef);
