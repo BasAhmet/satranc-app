@@ -118,12 +118,12 @@ if (btnBotPlay) {
         myColor = 'white';   // Oyuncu her zaman Beyaz olsun
 
         // YENİ: Açılır menüden seçilen seviyeyi integer (tam sayı) olarak alıyoruz
-        botLevel = parseInt(botDifficultySelect.value);
+        botLevel = parseInt(botDifficultySelect.value) || 2;
         
         lobbyScreen.classList.add('hidden');
         
         if (roomCodeDisplay && roomCodeText) {
-            roomCodeText.textContent = "🤖 Bot Maçı (Kolay)";
+            roomCodeText.textContent = `🤖 Bot Maçı (Seviye ${botLevel})`;
             roomCodeDisplay.classList.remove('hidden');
         }
         
