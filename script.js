@@ -45,11 +45,12 @@ let lastMove = null;
 let moveHistoryList = []; // Tüm hamle notasyonlarını tutacak listemiz
 let myColor = null;       // Oyuncunun kendi rengi ('white' veya 'black')
 let currentRoomId = null; // Oynanan odanın kodu
+let isLocalPlay = false;  // YENİ: Aynı cihazda oynama modu kontrolü
 
 if (btnRestart) {
     btnRestart.addEventListener('click', async () => {
         // Eğer bir odaya henüz girilmediyse buton çalışmasın
-        if (!currentRoomId) return; 
+        if (!currentRoomId && !isLocalPlay) return; 
 
         // Yanlışlıkla basmalara karşı küçük bir onay alalım
         const onay = confirm("Oyunu sıfırlayıp yeni bir maça başlamak istediğinize emin misiniz?");
@@ -67,15 +68,24 @@ if (btnRestart) {
             ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
         ];
 
-        // Sadece Firebase'deki odayı başlangıç ayarlarına güncelliyoruz.
-        // DİKKAT: 'playerBlackJoined' verisine dokunmuyoruz ki oyuncular odadan atılmasın!
-        const gameRef = doc(db, "games", currentRoomId);
-        await setDoc(gameRef, {
-            board: JSON.stringify(startingBoard), // Tahtayı sıfırla
-            turn: 'white',                        // Sırayı tekrar Beyaz'a ver
-            moveCount: 1,                         // Hamle sayısını sıfırla
-            history: []                           // Hamle geçmişini boşalt
-        }, { merge: true }); 
+        if (isLocalPlay) {
+            // Yerel oyunda direkt lokal değişkenleri sıfırla
+            initialBoard = startingBoard;
+            currentPlayer = 'white';
+            moveHistoryList = [];
+            createBoard();
+            updateTurnIndicator();
+            renderMoveHistory();
+        } else {
+            // Online oyunda Firebase'i sıfırla
+            const gameRef = doc(db, "games", currentRoomId);
+            await setDoc(gameRef, {
+                board: JSON.stringify(startingBoard),
+                turn: 'white',
+                moveCount: 1,
+                history: []
+            }, { merge: true }); 
+        }
     });
 }
 
@@ -86,6 +96,7 @@ const lobbyScreen = document.getElementById('lobby-screen');
 const btnCreateRoom = document.getElementById('btn-create-room');
 const btnJoinRoom = document.getElementById('btn-join-room');
 const inputRoomCode = document.getElementById('input-room-code');
+const btnLocalPlay = document.getElementById('btn-local-play');
 
 // ODA KURMA (BEYAZ OYUNCU)
 btnCreateRoom.addEventListener('click', async () => {
@@ -142,6 +153,28 @@ btnJoinRoom.addEventListener('click', async () => {
         alert("Böyle bir oda kodu bulunamadı!");
     }
 });
+
+// YEREL MAÇ BAŞLATMA BUTTONU
+if (btnLocalPlay) {
+    btnLocalPlay.addEventListener('click', () => {
+        isLocalPlay = true;
+        myColor = 'local'; 
+        
+        lobbyScreen.classList.add('hidden'); // Lobiyi gizle
+        
+        // Üst kısımdaki Oda Kodu alanına "Yerel Maç" yazalım
+        if (roomCodeDisplay && roomCodeText) {
+            roomCodeText.textContent = "Yerel Maç 📱";
+            roomCodeDisplay.classList.remove('hidden');
+        }
+        
+        // Oyunu yerel olarak sıfırla ve başlat
+        currentPlayer = 'white';
+        moveHistoryList = [];
+        updateTurnIndicator();
+        createBoard();
+    });
+}
 
 // =========================================================================
 // 1. TAHTA OLUŞTURMA VE ÇİZİM
@@ -251,7 +284,7 @@ function handleSquareClick(event) {
     const col = parseInt(square.dataset.col);
     const pieceAtSquare = initialBoard[row][col];
     
-    if (currentPlayer !== myColor) return;
+    if (!isLocalPlay && currentPlayer !== myColor) return;
     
     if (!selectedSquare) {
         if (pieceAtSquare && isPieceCurrentPlayers(pieceAtSquare)) {
@@ -344,8 +377,18 @@ function finalizeMove(piece, targetRow, targetCol) {
     updateTurnIndicator();
     createBoard();
 
-    // HAMLEYİ FIREBASE'E GÖNDERİYORUZ
-    saveGame(); 
+   if (!isLocalPlay) {
+        // Online oyunda Firebase'e kaydet
+        saveGame(); //
+    } else {
+        // Yerel oyunda Firebase dinleyicisi olmadığı için geçmişi ve matı el ile çiziyoruz
+        renderMoveHistory(); 
+        setTimeout(() => {
+            if (typeof checkGameOver === 'function') {
+                checkGameOver();
+            }
+        }, 100);
+    }
 }
 
 // OYUN SONU (MAT/PAT) KONTROLÜ
