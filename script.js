@@ -905,14 +905,14 @@ function evaluateBoard(level) {
     // 2. Konum Matrisleri (Sadece 3. Seviye ve üstü için)
     // Matrisler siyah taşların bakış açısına (yukarıdan aşağıya) göre ayarlanmıştır.
     const positionBonus = {
-        'p': [ // Piyonlar: İleri gitmek ve merkeze tutunmak iyidir
+        'p': [ 
             [0,  0,  0,  0,  0,  0,  0,  0],
             [5,  5,  5,  5,  5,  5,  5,  5],
+            [6,  6,  7,  8,  8,  7,  6,  6], // Eskiden 1-3 arasıydı, şimdi daha yüksek!
+            [4,  4,  5,  6,  6,  5,  4,  4],
+            [2,  2,  3,  4,  4,  3,  2,  2],
             [1,  1,  2,  3,  3,  2,  1,  1],
-            [0,  0,  1,  2,  2,  1,  0,  0],
-            [0,  0,  0,  2,  2,  0,  0,  0],
-            [0, -1, -1,  0,  0, -1, -1,  0],
-            [0,  1,  1, -2, -2,  1,  1,  0],
+            [0,  0,  0,  0,  0,  0,  0,  0],
             [0,  0,  0,  0,  0,  0,  0,  0]
         ],
         'n': [ // Atlar: Kesinlikle merkezde olmalı, kenarlar çok kötü
