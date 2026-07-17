@@ -19,6 +19,8 @@ const moveHistoryContainer = document.getElementById('move-history');
 const btnRestart = document.getElementById('btn-restart');
 const roomCodeDisplay = document.getElementById('room-code-display');
 const roomCodeText = document.getElementById('room-code-text');
+const botDifficultySelect = document.getElementById('bot-difficulty');
+let botLevel = 1; // Seçilen bot seviyesini hafızada tutacak değişken
 
 let moveNumber = 1;
 let currentMoveRow = null;
@@ -114,6 +116,9 @@ if (btnBotPlay) {
         isBotPlay = true;
         isLocalPlay = false; // Yerel oyun değil
         myColor = 'white';   // Oyuncu her zaman Beyaz olsun
+
+        // YENİ: Açılır menüden seçilen seviyeyi integer (tam sayı) olarak alıyoruz
+        botLevel = parseInt(botDifficultySelect.value);
         
         lobbyScreen.classList.add('hidden');
         
