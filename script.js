@@ -46,6 +46,7 @@ let moveHistoryList = []; // Tüm hamle notasyonlarını tutacak listemiz
 let myColor = null;       // Oyuncunun kendi rengi ('white' veya 'black')
 let currentRoomId = null; // Oynanan odanın kodu
 let isLocalPlay = false;  // YENİ: Aynı cihazda oynama modu kontrolü
+let rotateBlackPieces = false; // YENİ: Siyah taşları döndürme tercihi
 
 if (btnRestart) {
     btnRestart.addEventListener('click', async () => {
@@ -160,6 +161,9 @@ if (btnLocalPlay) {
         isLocalPlay = true;
         myColor = 'local'; 
         
+        // YENİ: Kullanıcıya siyah taşların dönüp dönmeyeceğini soruyoruz
+        rotateBlackPieces = confirm("Masada karşılıklı oynayacaksanız, karşı tarafın rahat görmesi için Siyah taşlar ters (rakibinize doğru) dönsün mü?");
+        
         lobbyScreen.classList.add('hidden'); // Lobiyi gizle
         
         // Üst kısımdaki Oda Kodu alanına "Yerel Maç" yazalım
@@ -210,6 +214,13 @@ function createBoard() {
             if (piece !== '') {
                 const pieceElement = document.createElement('span');
                 pieceElement.textContent = pieceSymbols[piece];
+                // YENİ: Taş siyah ise ve döndürme seçeneği evet ise ters çevirme sınıflarını ekle
+                let transformClass = '';
+                // Siyah taşlar küçük harfle yazıldığı için (piece === piece.toLowerCase()) ile siyah mı diye kontrol ediyoruz
+                if (isLocalPlay && rotateBlackPieces && piece === piece.toLowerCase()) {
+                    // rotate-180 ile 180 derece döndürüyoruz, inline-block ile dönmenin düzgün çalışmasını sağlıyoruz
+                    transformClass = ' inline-block rotate-180'; 
+                }
                 pieceElement.className = 'text-4xl sm:text-5xl md:text-6xl text-slate-800 select-none drop-shadow-sm pointer-events-none';
                 pieceElement.style.fontFamily = "'Arial Unicode MS', 'Segoe UI Symbol', sans-serif";
                 square.appendChild(pieceElement);
