@@ -221,7 +221,8 @@ function createBoard() {
                     // rotate-180 ile 180 derece döndürüyoruz, inline-block ile dönmenin düzgün çalışmasını sağlıyoruz
                     transformClass = ' inline-block rotate-180'; 
                 }
-                pieceElement.className = `text-4xl sm:text-5xl md:text-6xl text-slate-800 select-none drop-shadow-sm pointer-events-none`;
+                // DÜZELTİLMİŞ HALİ (En sona ${transformClass} eklendi ve ters tırnak kullanıldı):
+                pieceElement.className = `text-4xl sm:text-5xl md:text-6xl text-slate-800 select-none drop-shadow-sm pointer-events-none${transformClass}`;;
                 pieceElement.style.fontFamily = "'Arial Unicode MS', 'Segoe UI Symbol', sans-serif";
                 square.appendChild(pieceElement);
             }
