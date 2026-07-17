@@ -841,18 +841,75 @@ function getAllValidMoves(color) {
 function makeBotMove() {
     if (!isBotPlay || currentPlayer !== 'black') return;
 
-    // Bota 600ms kadar küçük bir düşünme süresi verelim ki hamle pat diye gelmesin
     setTimeout(() => {
         const legalMoves = getAllValidMoves('black');
-        if (legalMoves.length === 0) return; // Mat veya pat durumunu zaten checkGameOver çözecek
+        if (legalMoves.length === 0) return; 
 
-        // Şimdilik mevcut kurallı hamlelerden rastgele birini seçtiriyoruz
-        const chosenMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+        let chosenMove = null;
 
-        // Seçimi simüle edip hamleyi tetikliyoruz
-        selectedSquare = { row: chosenMove.startRow, col: chosenMove.startCol };
-        movePiece(chosenMove.targetRow, chosenMove.targetCol);
+        if (botLevel === 1) {
+            // 1. SEVİYE: Tamamen Rastgele
+            chosenMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+        } 
+        else if (botLevel >= 2) {
+            // 2. SEVİYE: Açgözlü (En yüksek puanı getiren hamleyi bul)
+            let bestScore = -Infinity;
+            let bestMoves = [];
+
+            for (const move of legalMoves) {
+                // A. Hamleyi sanal olarak yap (Tahtada dene)
+                const originalTargetPiece = initialBoard[move.targetRow][move.targetCol];
+                const pieceToMove = initialBoard[move.startRow][move.startCol];
+                
+                initialBoard[move.targetRow][move.targetCol] = pieceToMove;
+                initialBoard[move.startRow][move.startCol] = '';
+
+                // B. Tahtanın yeni durumunu puanla
+                const currentScore = evaluateBoard();
+
+                // C. Hamleyi geri al (Orijinal tahtayı bozmamak için)
+                initialBoard[move.startRow][move.startCol] = pieceToMove;
+                initialBoard[move.targetRow][move.targetCol] = originalTargetPiece;
+
+                // D. Skoru değerlendir
+                if (currentScore > bestScore) {
+                    bestScore = currentScore;
+                    bestMoves = [move]; // Yeni bir "en iyi" bulundu, havuzu temizle ve bunu ekle
+                } else if (currentScore === bestScore) {
+                    bestMoves.push(move); // Eşit puanlı alternatif bir hamle bulundu, havuzda biriktir
+                }
+            }
+            
+            // Aynı maksimum puanı veren eşit karlı hamleler arasından sürpriz faktörü için rastgele seç
+            chosenMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+        }
+
+        // Seçilen en iyi hamleyi uygula
+        if (chosenMove) {
+            selectedSquare = { row: chosenMove.startRow, col: chosenMove.startCol };
+            movePiece(chosenMove.targetRow, chosenMove.targetCol);
+        }
     }, 600);
+}
+
+// Tahtanın o anki puanını hesaplar (Siyah taşlar +, Beyaz taşlar - puan)
+function evaluateBoard() {
+    let totalEvaluation = 0;
+    // Satrançtaki evrensel taş değerleri (Şah için ulaşılamaz yüksek bir değer verilir)
+    const pieceValues = {
+        'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9, 'k': 1000,   // Siyah (Bot) taşları puan kazandırır
+        'P': -1, 'N': -3, 'B': -3, 'R': -5, 'Q': -9, 'K': -1000 // Beyaz (Oyuncu) taşları puan eksiltir
+    };
+    
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = initialBoard[r][c];
+            if (piece !== '') {
+                totalEvaluation += pieceValues[piece];
+            }
+        }
+    }
+    return totalEvaluation;
 }
 
 // =========================================================================
