@@ -52,6 +52,8 @@ let rotateBlackPieces = false; // YENİ: Siyah taşları döndürme tercihi
 let isBotPlay = false; // YENİ: Bota karşı oynama modu kontrolü
 // YENİ: Rok haklarını (Hafıza) tutan değişken
 let castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
+// Tahta konumlarının kaç kez tekrar ettiğini tutacak obje
+let positionHistory = {};
 
 if (btnRestart) {
     btnRestart.addEventListener('click', async () => {
@@ -465,6 +467,14 @@ function finalizeMove(piece, targetRow, targetCol) {
         makeBotMove();
     }
 }
+// movePiece fonksiyonunun içinde, taş yer değiştirdikten SONRA eklenecek kısım:
+
+if (checkThreefoldRepetition()) {
+    // Arayüzdeki mesaj kutusunu veya alert'i tetikle
+    alert("Beraberlik: Üç Konum Tekrarı (Hamle Tekrarı ile Pat)!");
+    // Oyunu durduracak değişkenlerini burada false yap (örneğin isGameActive = false;)
+    return; // Kodu sonlandır ki bot oynamaya çalışmasın
+}
 
 // OYUN SONU (MAT/PAT) KONTROLÜ
 function checkGameOver() {
@@ -802,6 +812,38 @@ function listenGame(roomId) {
         }
     });
 }
+// Tahtanın o anki durumunu benzersiz bir metne (String) çevirir
+function getBoardSnapshot() {
+    let snapshot = "";
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            // Boş kareleri '-' ile, taşları kendi harfleriyle kaydet
+            snapshot += initialBoard[r][c] === '' ? '-' : initialBoard[r][c];
+        }
+    }
+    // Aynı konumda sıranın kimde olduğu da tekrar kuralına dahildir!
+    snapshot += currentPlayer; 
+    return snapshot;
+}
+
+// Konumun 3 kere tekrar edip etmediğini kontrol eder
+function checkThreefoldRepetition() {
+    const currentSnapshot = getBoardSnapshot();
+    
+    // Konum daha önce oluştuysa sayısını 1 artır, oluşmadıysa 1 olarak kaydet
+    if (positionHistory[currentSnapshot]) {
+        positionHistory[currentSnapshot]++;
+    } else {
+        positionHistory[currentSnapshot] = 1;
+    }
+
+    // Eğer bu konum 3. kez oluştuysa beraberliktir
+    if (positionHistory[currentSnapshot] >= 3) {
+        return true;
+    }
+    return false;
+}
+
 
 // Bot için o anki tüm kurallı hamleleri toplayan fonksiyon
 function getAllValidMoves(color) {
