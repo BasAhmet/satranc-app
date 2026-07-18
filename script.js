@@ -882,8 +882,8 @@ function makeBotMove() {
             let bestScore = -Infinity;
             let bestMoves = [];
             
-            // Seviye 4 ise 2 hamle, Seviye 5 ise 3 hamle ileriye bak
-            const depth = botLevel === 4 ? 2 : 3; 
+            // Matematiksel Örüntü: İnilecek derinlik her zaman bot seviyesinin 2 eksiğidir
+            const depth = botLevel - 2; 
 
             for (const move of legalMoves) {
                 const originalTargetPiece = initialBoard[move.targetRow][move.targetCol];
