@@ -878,10 +878,12 @@ function makeBotMove() {
             chosenMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
         }
         else if (botLevel >= 4) {
-            // 4. SEVİYE: MİNİMAX (2 Hamle İleri Görüşlülük)
+            // 4. SEVİYE (Derinlik 2) ve 5. SEVİYE (Derinlik 3+)
             let bestScore = -Infinity;
             let bestMoves = [];
-            const depth = 2; // Matematiksel derinlik (Bot kendi hamlesi + Senin cevabın)
+            
+            // Seviye 4 ise 2 hamle, Seviye 5 ise 3 hamle ileriye bak
+            const depth = botLevel === 4 ? 2 : 3; 
 
             for (const move of legalMoves) {
                 const originalTargetPiece = initialBoard[move.targetRow][move.targetCol];
@@ -890,9 +892,8 @@ function makeBotMove() {
                 initialBoard[move.targetRow][move.targetCol] = pieceToMove;
                 initialBoard[move.startRow][move.startCol] = '';
 
-                // Kendi hamlemizi yaptık, şimdi ağacı "Minimize Eden" (Beyaz) üzerinden başlatıyoruz
-                // Yani "Ben bunu yaparsam, o en iyi cevabıyla bana ne kadar zarar verir?" diyoruz.
-                const currentScore = minimax(depth - 1, false);
+                // Ağacı başlatırken alpha ve beta değerlerini de gönderiyoruz
+                const currentScore = minimax(depth - 1, false, -Infinity, Infinity);
 
                 initialBoard[move.startRow][move.startCol] = pieceToMove;
                 initialBoard[move.targetRow][move.targetCol] = originalTargetPiece;
@@ -996,61 +997,56 @@ function evaluateBoard(level) {
     return totalEvaluation;
 }
 
-// YENİ: Minimax Algoritması (Gelecek hamleleri hesaplar)
-function minimax(depth, isMaximizingPlayer) {
-    // 1. Taban Durumu: İstenilen derinliğe inildiyse o anki tahta puanını döndür
+// YENİ: Alpha-Beta Budamalı Minimax Algoritması
+function minimax(depth, isMaximizingPlayer, alpha = -Infinity, beta = Infinity) {
     if (depth === 0) {
         return evaluateBoard(botLevel);
     }
 
     if (isMaximizingPlayer) {
-        // SİYAHIN (Botun) SIRASI: Puanı olabildiğince yükseltmeye çalışır (+ yönde)
         let maxEval = -Infinity;
         const moves = getAllValidMoves('black');
-        
-        if (moves.length === 0) return evaluateBoard(botLevel); // Oyun bittiyse (Mat/Pat) puanı yolla
+        if (moves.length === 0) return evaluateBoard(botLevel);
 
         for (const move of moves) {
-            // Hamleyi sanal olarak yap
             const originalTargetPiece = initialBoard[move.targetRow][move.targetCol];
             const pieceToMove = initialBoard[move.startRow][move.startCol];
             initialBoard[move.targetRow][move.targetCol] = pieceToMove;
             initialBoard[move.startRow][move.startCol] = '';
 
-            // Ağacın bir alt dalına in (Sıra Beyazda)
-            const ev = minimax(depth - 1, false);
+            const ev = minimax(depth - 1, false, alpha, beta);
 
-            // Tahtayı eski haline getir (Sanal hamleyi geri al)
             initialBoard[move.startRow][move.startCol] = pieceToMove;
             initialBoard[move.targetRow][move.targetCol] = originalTargetPiece;
 
-            // En kârlı hamleyi hafızada tut
             maxEval = Math.max(maxEval, ev);
+            alpha = Math.max(alpha, ev);
+            
+            // ALPHA-BETA BUDAMASI: Eğer bu dal zaten hesaplanan en iyi seçenekten kötüyse, kalan ihtimallere bakma!
+            if (beta <= alpha) break; 
         }
         return maxEval;
     } else {
-        // BEYAZIN (Oyuncunun) SIRASI: Puanı olabildiğince düşürmeye çalışır (- yönde)
         let minEval = Infinity;
         const moves = getAllValidMoves('white');
-        
-        if (moves.length === 0) return evaluateBoard(botLevel); // Oyun bittiyse (Mat/Pat) puanı yolla
+        if (moves.length === 0) return evaluateBoard(botLevel);
 
         for (const move of moves) {
-            // Hamleyi sanal olarak yap
             const originalTargetPiece = initialBoard[move.targetRow][move.targetCol];
             const pieceToMove = initialBoard[move.startRow][move.startCol];
             initialBoard[move.targetRow][move.targetCol] = pieceToMove;
             initialBoard[move.startRow][move.startCol] = '';
 
-            // Ağacın bir alt dalına in (Sıra Siyahın)
-            const ev = minimax(depth - 1, true);
+            const ev = minimax(depth - 1, true, alpha, beta);
 
-            // Tahtayı eski haline getir (Sanal hamleyi geri al)
             initialBoard[move.startRow][move.startCol] = pieceToMove;
             initialBoard[move.targetRow][move.targetCol] = originalTargetPiece;
 
-            // Bota en çok zarar verecek hamleyi hafızada tut
             minEval = Math.min(minEval, ev);
+            beta = Math.min(beta, ev);
+            
+            // ALPHA-BETA BUDAMASI
+            if (beta <= alpha) break;
         }
         return minEval;
     }
