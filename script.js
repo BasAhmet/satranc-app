@@ -21,6 +21,8 @@ const roomCodeDisplay = document.getElementById('room-code-display');
 const roomCodeText = document.getElementById('room-code-text');
 const botDifficultySelect = document.getElementById('bot-difficulty');
 let botLevel = 1; // Seçilen bot seviyesini hafızada tutacak değişken
+const btnUndo = document.getElementById('btn-undo');
+let undoStack = []; // Geçmiş hamlelerin durumlarını tutacak yığıt
 
 let moveNumber = 1;
 let currentMoveRow = null;
@@ -118,6 +120,7 @@ const btnBotPlay = document.getElementById('btn-bot-play');
 if (btnBotPlay) {
     btnBotPlay.addEventListener('click', () => {
         castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
+        if (btnUndo) btnUndo.classList.add('hidden');
         positionHistory = {}; 
         isGameActive = true; 
         isBotPlay = true;
@@ -211,6 +214,8 @@ btnJoinRoom.addEventListener('click', async () => {
 if (btnLocalPlay) {
     btnLocalPlay.addEventListener('click', () => {
         castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
+        undoStack = [];
+        if (btnUndo) btnUndo.classList.remove('hidden');
 
         // YENİ EKLENEN SATIR: Konum hafızasını sıfırla
         positionHistory = {};
@@ -235,6 +240,29 @@ if (btnLocalPlay) {
         lastMove = null; // YENİ: Yerel maça başlarken son hamleyi sıfırla
         updateTurnIndicator();
         createBoard();
+    });
+}
+if (btnUndo) {
+    btnUndo.addEventListener('click', () => {
+        // Eğer hafızada geri alınacak hamle yoksa veya oyun yerel değilse işlem yapma
+        if (!isLocalPlay || undoStack.length === 0) return;
+
+        // Yığıttan son durumu çıkar (pop) ve değişkenlere geri ata
+        const previousState = undoStack.pop();
+        
+        initialBoard = JSON.parse(previousState.board);
+        currentPlayer = previousState.turn;
+        castlingRights = JSON.parse(previousState.castlingRights);
+        moveHistoryList = [...previousState.history];
+        lastMove = previousState.last;
+        
+        // Eğer mat uyarısı çıkıp oyun kilitlendiyse, geri alınca kilidi aç
+        isGameActive = true; 
+        
+        // Tahtayı ve arayüzü eski haline göre tekrar çiz
+        createBoard();
+        updateTurnIndicator();
+        renderMoveHistory();
     });
 }
 
@@ -412,6 +440,16 @@ function clearSelection() {
 
 function movePiece(targetRow, targetCol) {
     const pieceToMove = initialBoard[selectedSquare.row][selectedSquare.col];
+    // YENİ: Sadece yerel maçtaysak hamleden önceki durumu kaydet
+    if (isLocalPlay) {
+        undoStack.push({
+            board: JSON.stringify(initialBoard), // Tahtanın derin kopyası
+            turn: currentPlayer,
+            castling: JSON.stringify(castlingRights),
+            history: [...moveHistoryList], // Geçmiş listesinin kopyası
+            last: lastMove ? { ...lastMove } : null
+        });
+    }
     
     if (checkThreefoldRepetition()) {
         isGameActive = false; // SİSTEMİ KİLİTLE
