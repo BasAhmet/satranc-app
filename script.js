@@ -268,7 +268,7 @@ function createBoard() {
                     transformClass = ' inline-block rotate-180'; 
                 }
                 // DÜZELTİLMİŞ HALİ (En sona ${transformClass} eklendi ve ters tırnak kullanıldı):
-                pieceElement.className = `text-4xl sm:text-5xl md:text-6xl text-slate-800 select-none drop-shadow-sm pointer-events-none${transformClass}`;;
+                pieceElement.className = `text-4xl sm:text-5xl md:text-6xl text-slate-800 select-none drop-shadow-sm pointer-events-none${transformClass}`;
                 pieceElement.style.fontFamily = "'Arial Unicode MS', 'Segoe UI Symbol', sans-serif";
                 square.appendChild(pieceElement);
             }
@@ -422,6 +422,14 @@ function movePiece(targetRow, targetCol) {
     
     lastMove = { piece: pieceToMove, startRow: selectedSquare.row, startCol: selectedSquare.col, targetRow: targetRow, targetCol: targetCol };
 
+    // movePiece fonksiyonunun içinde, taş yer değiştirdikten SONRA eklenecek kısım:
+    if (checkThreefoldRepetition()) {
+        // Arayüzdeki mesaj kutusunu veya alert'i tetikle
+        alert("Beraberlik: Üç Konum Tekrarı (Hamle Tekrarı ile Pat)!");
+        // Oyunu durduracak değişkenlerini burada false yap (örneğin isGameActive = false;)
+        return; // Kodu sonlandır ki bot oynamaya çalışmasın
+    }
+
     const isWhitePromotion = (pieceToMove === 'P' && targetRow === 0);
     const isBlackPromotion = (pieceToMove === 'p' && targetRow === 7);
 
@@ -467,15 +475,6 @@ function finalizeMove(piece, targetRow, targetCol) {
         makeBotMove();
     }
 }
-// movePiece fonksiyonunun içinde, taş yer değiştirdikten SONRA eklenecek kısım:
-
-if (checkThreefoldRepetition()) {
-    // Arayüzdeki mesaj kutusunu veya alert'i tetikle
-    alert("Beraberlik: Üç Konum Tekrarı (Hamle Tekrarı ile Pat)!");
-    // Oyunu durduracak değişkenlerini burada false yap (örneğin isGameActive = false;)
-    return; // Kodu sonlandır ki bot oynamaya çalışmasın
-}
-
 // OYUN SONU (MAT/PAT) KONTROLÜ
 function checkGameOver() {
     if (!hasAnyValidMove(currentPlayer)) {
