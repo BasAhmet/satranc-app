@@ -50,10 +50,9 @@ let currentRoomId = null; // Oynanan odanın kodu
 let isLocalPlay = false;  // YENİ: Aynı cihazda oynama modu kontrolü
 let rotateBlackPieces = false; // YENİ: Siyah taşları döndürme tercihi
 let isBotPlay = false; // YENİ: Bota karşı oynama modu kontrolü
-// YENİ: Rok haklarını (Hafıza) tutan değişken
-let castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
-// Tahta konumlarının kaç kez tekrar ettiğini tutacak obje
-let positionHistory = {};
+let isGameActive = true; // Oyunun oynanabilir durumda olup olmadığını kontrol eder
+let castlingRights = { wK: true, wQ: true, bK: true, bQ: true }; // YENİ: Rok haklarını (Hafıza) tutan değişken
+let positionHistory = {}; // Tahta konumlarının kaç kez tekrar ettiğini tutacak obje
 
 if (btnRestart) {
     btnRestart.addEventListener('click', async () => {
@@ -61,7 +60,7 @@ if (btnRestart) {
 
         // YENİ EKLENEN SATIR: Geçmiş oyunun konum hafızasını tamamen siler
         positionHistory = {};
-
+        isGameActive = true; // YENİ OYUNDA KİLİDİ AÇ
         // Eğer bir odaya henüz girilmediyse buton çalışmasın
         if (!currentRoomId && !isLocalPlay && !isBotPlay) return; 
 
@@ -122,6 +121,7 @@ if (btnBotPlay) {
 
         // YENİ EKLENEN SATIR: Konum hafızasını sıfırla
         positionHistory = {};
+        isGameActive = true; // YENİ OYUNDA KİLİDİ AÇ
         
         isBotPlay = true;
         isLocalPlay = false; // Yerel oyun değil
@@ -208,7 +208,7 @@ if (btnLocalPlay) {
 
         // YENİ EKLENEN SATIR: Konum hafızasını sıfırla
         positionHistory = {};
-        
+        isGameActive = true; // YENİ OYUNDA KİLİDİ AÇ        
         isLocalPlay = true;
         myColor = 'local'; 
         
@@ -349,6 +349,7 @@ function handlePromotionSelection(chosenPiece, targetRow, targetCol) {
 // 2. ETKİLEŞİM VE HAMLE YÖNETİMİ
 // =========================================================================
 function handleSquareClick(event) {
+    if (!isGameActive) return; // OYUN BİTTİYSE TIKLAMALARI DURDUR
     const square = event.currentTarget;
     const row = parseInt(square.dataset.row);
     const col = parseInt(square.dataset.col);
@@ -405,6 +406,12 @@ function clearSelection() {
 
 function movePiece(targetRow, targetCol) {
     const pieceToMove = initialBoard[selectedSquare.row][selectedSquare.col];
+    
+    if (checkThreefoldRepetition()) {
+        isGameActive = false; // SİSTEMİ KİLİTLE
+        alert("Beraberlik: Üç Konum Tekrarı (Hamle Tekrarı ile Pat)!");
+        return; 
+    }
 
     // YENİ: ROK HAFIZA GÜNCELLEMESİ (Taş oynarsa hak iptal olur)
     if (pieceToMove === 'K') { castlingRights.wK = false; castlingRights.wQ = false; }
@@ -490,6 +497,7 @@ function finalizeMove(piece, targetRow, targetCol) {
 // OYUN SONU (MAT/PAT) KONTROLÜ
 function checkGameOver() {
     if (!hasAnyValidMove(currentPlayer)) {
+        isGameActive = false; // SİSTEMİ KİLİTLE
         if (isKingInCheck(currentPlayer)) {
             const winner = currentPlayer === 'white' ? 'Siyah' : 'Beyaz';
             alert(`ŞAH MAT! ${winner} kazandı!`);
