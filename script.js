@@ -460,7 +460,7 @@ function movePiece(targetRow, targetCol) {
 
     // movePiece fonksiyonu içindeki terfi kontrol alanını şu şekilde güncelle:
     if (isWhitePromotion || isBlackPromotion) {
-        if (isBotPlay && currentPlayer === 'black') {
+        if (isBotPlay && currentPlayer !== myColor) {
             // Bot ise direkt Vezir yap ve modal açma
             initialBoard[targetRow][targetCol] = 'q';
             finalizeMove('q', targetRow, targetCol);
@@ -496,7 +496,7 @@ function finalizeMove(piece, targetRow, targetCol) {
         }, 100);
     }
     // finalizeMove fonksiyonunun en sonuna, if(!isLocalPlay) kontrolünün hemen altına ekle:
-    if (isBotPlay && currentPlayer === 'black') {
+    if (isBotPlay && currentPlayer !== myColor) {
         makeBotMove();
     }
 }
@@ -906,11 +906,12 @@ function getAllValidMoves(color) {
 
 // Botun hamle yapmasını sağlayan ana tetikleyici
 function makeBotMove() {
+    const botColor = myColor === 'white' ? 'black' : 'white'; // Botun rengini belirliyoruz
     // Eğer oyuncu siyah ise bot beyaz oynamalı (currentPlayer === 'white')
     if (!isBotPlay || (myColor === 'white' && currentPlayer !== 'black') || (myColor === 'black' && currentPlayer !== 'white')) return;
 
     setTimeout(() => {
-        const legalMoves = getAllValidMoves('black');
+        const legalMoves = getAllValidMoves(botColor);
         if (legalMoves.length === 0) return; 
 
         let chosenMove = null;
@@ -1062,18 +1063,21 @@ function evaluateBoard(level) {
             }
         }
     }
-    return totalEvaluation;
+    const botColor = myColor === 'white' ? 'black' : 'white';
+    return botColor === 'white' ? -totalEvaluation : totalEvaluation;
 }
 
 // YENİ: Alpha-Beta Budamalı Minimax Algoritması
 function minimax(depth, isMaximizingPlayer, alpha = -Infinity, beta = Infinity) {
+    const botColor = myColor === 'white' ? 'black' : 'white';
+    const playerColor = myColor;
     if (depth === 0) {
         return evaluateBoard(botLevel);
     }
 
     if (isMaximizingPlayer) {
         let maxEval = -Infinity;
-        const moves = getAllValidMoves('black');
+        const moves = getAllValidMoves(botColor);
         if (moves.length === 0) return evaluateBoard(botLevel);
 
         for (const move of moves) {
@@ -1096,7 +1100,7 @@ function minimax(depth, isMaximizingPlayer, alpha = -Infinity, beta = Infinity) 
         return maxEval;
     } else {
         let minEval = Infinity;
-        const moves = getAllValidMoves('white');
+        const moves = getAllValidMoves(playerColor);
         if (moves.length === 0) return evaluateBoard(botLevel);
 
         for (const move of moves) {
