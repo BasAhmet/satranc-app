@@ -215,7 +215,8 @@ if (btnLocalPlay) {
     btnLocalPlay.addEventListener('click', () => {
         castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
         undoStack = [];
-        if (btnUndo) btnUndo.classList.remove('hidden');
+        if (btnUndo) btnUndo.classList.add('hidden');
+        //if (btnUndo) btnUndo.classList.remove('hidden');
 
         // YENİ EKLENEN SATIR: Konum hafızasını sıfırla
         positionHistory = {};
