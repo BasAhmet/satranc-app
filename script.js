@@ -118,22 +118,21 @@ const btnBotPlay = document.getElementById('btn-bot-play');
 if (btnBotPlay) {
     btnBotPlay.addEventListener('click', () => {
         castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
-
-        // YENİ EKLENEN SATIR: Konum hafızasını sıfırla
-        positionHistory = {};
-        isGameActive = true; // YENİ OYUNDA KİLİDİ AÇ
-        
+        positionHistory = {}; 
+        isGameActive = true; 
         isBotPlay = true;
-        isLocalPlay = false; // Yerel oyun değil
-        myColor = 'white';   // Oyuncu her zaman Beyaz olsun
+        isLocalPlay = false;
 
-        // YENİ: Açılır menüden seçilen seviyeyi integer (tam sayı) olarak alıyoruz
+        // 1. ADIM: Kullanıcının seçtiği rengi al (HTML'e ekleyeceğiniz select'in ID'sini kullanın)
+        const colorSelect = document.getElementById('botColorSelect');
+        myColor = colorSelect ? colorSelect.value : 'white'; 
+        
         botLevel = parseInt(botDifficultySelect.value) || 2;
         
         lobbyScreen.classList.add('hidden');
         
         if (roomCodeDisplay && roomCodeText) {
-            roomCodeText.textContent = `🤖 Bot Maçı (Seviye ${botLevel})`;
+            roomCodeText.textContent = `🤖 Bot Maçı (Seviye ${botLevel} - ${myColor === 'white' ? 'Beyaz' : 'Siyah'})`;
             roomCodeDisplay.classList.remove('hidden');
         }
         
@@ -142,6 +141,13 @@ if (btnBotPlay) {
         lastMove = null;
         updateTurnIndicator();
         createBoard();
+
+        // 2. ADIM: Eğer oyuncu Siyah ise Bot (Beyaz) ilk hamleyi yapmalı
+        if (myColor === 'black') {
+            setTimeout(() => {
+                makeBotMove();
+            }, 600);
+        }
     });
 }
 
@@ -900,7 +906,8 @@ function getAllValidMoves(color) {
 
 // Botun hamle yapmasını sağlayan ana tetikleyici
 function makeBotMove() {
-    if (!isBotPlay || currentPlayer !== 'black') return;
+    // Eğer oyuncu siyah ise bot beyaz oynamalı (currentPlayer === 'white')
+    if (!isBotPlay || (myColor === 'white' && currentPlayer !== 'black') || (myColor === 'black' && currentPlayer !== 'white')) return;
 
     setTimeout(() => {
         const legalMoves = getAllValidMoves('black');
