@@ -58,6 +58,10 @@ let positionHistory = {};
 if (btnRestart) {
     btnRestart.addEventListener('click', async () => {
         castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
+
+        // YENİ EKLENEN SATIR: Geçmiş oyunun konum hafızasını tamamen siler
+        positionHistory = {};
+
         // Eğer bir odaya henüz girilmediyse buton çalışmasın
         if (!currentRoomId && !isLocalPlay && !isBotPlay) return; 
 
@@ -115,6 +119,10 @@ const btnBotPlay = document.getElementById('btn-bot-play');
 if (btnBotPlay) {
     btnBotPlay.addEventListener('click', () => {
         castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
+
+        // YENİ EKLENEN SATIR: Konum hafızasını sıfırla
+        positionHistory = {};
+        
         isBotPlay = true;
         isLocalPlay = false; // Yerel oyun değil
         myColor = 'white';   // Oyuncu her zaman Beyaz olsun
@@ -197,6 +205,10 @@ btnJoinRoom.addEventListener('click', async () => {
 if (btnLocalPlay) {
     btnLocalPlay.addEventListener('click', () => {
         castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
+
+        // YENİ EKLENEN SATIR: Konum hafızasını sıfırla
+        positionHistory = {};
+        
         isLocalPlay = true;
         myColor = 'local'; 
         
