@@ -266,7 +266,41 @@ if (btnUndo) {
         renderMoveHistory();
     });
 }
+// FEN kodunu 8x8 tahta dizisine çeviren fonksiyon
+function parseFEN(fenString) {
+    // 8x8 boş bir tahta taslağı oluştur
+    const newBoard = [
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', '']
+    ];
 
+    // FEN kodunun sadece taş dizilimini içeren ilk kısmını alıyoruz
+    const boardPart = fenString.split(' ')[0]; 
+    const rows = boardPart.split('/'); // Satırları bölü (/) işaretinden ayır
+
+    for (let r = 0; r < 8; r++) {
+        let c = 0;
+        for (let i = 0; i < rows[r].length; i++) {
+            const char = rows[r][i];
+            
+            // Eğer karakter bir sayıysa (1-8), o kadar boş kare vardır, atla
+            if (!isNaN(char)) {
+                c += parseInt(char);
+            } else {
+                // Sayı değilse (harfse), taşı tahtaya yerleştir ve bir sonraki sütuna geç
+                newBoard[r][c] = char;
+                c++;
+            }
+        }
+    }
+    return newBoard;
+}
 // =========================================================================
 // 1. TAHTA OLUŞTURMA VE ÇİZİM
 // =========================================================================
