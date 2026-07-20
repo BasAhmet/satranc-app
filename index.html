@@ -34,15 +34,20 @@
             </button>
 
             <div class="mb-4">
-        <button id="btn-local-play" class="w-full mt-4 bg-emerald-600 text-white px-6 py-3 rounded-md font-bold hover:bg-emerald-700 transition-colors shadow-sm">
-            📱 Aynı Cihazdan Karşılıklı Oyna
-        </button>
-        </div>
-        <div>
-        <button id="btn-create-room" class="w-full bg-blue-600 text-white py-3 rounded-md mb-6 hover:bg-blue-700 font-bold transition-colors">
-            Yeni Oda Kur (Beyaz)
-        </button>
-        </div>
+            <button id="btn-local-play" class="w-full mt-4 bg-emerald-600 text-white px-6 py-3 rounded-md font-bold hover:bg-emerald-700 transition-colors shadow-sm">
+                📱 Aynı Cihazdan Karşılıklı Oyna
+            </button>
+            </div>
+            <div>
+            <button id="btn-create-room" class="w-full bg-blue-600 text-white py-3 rounded-md mb-6 hover:bg-blue-700 font-bold transition-colors">
+                Yeni Oda Kur (Beyaz)
+            </button>
+            </div>
+            <div class="mb-4">
+            <button id="btn-local-play" class="w-full mt-4 bg-emerald-600 text-white px-6 py-3 rounded-md font-bold hover:bg-emerald-700 transition-colors shadow-sm">
+                🧩 Bulmaca Çöz Oyna
+            </button>
+            </div>
             
         </div>
         
@@ -57,6 +62,26 @@
                 Katıl (Siyah)
             </button>
         </div>
+    </div>
+</div>
+    <!-- Bulmaca Seviye Seçim Ekranı -->
+<div id="puzzleScreen" class="hidden flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-lg max-w-md mx-auto mt-10">
+    <h2 class="text-2xl font-bold mb-6 text-gray-800">🧩 Bulmaca Modu</h2>
+    <p class="text-gray-600 mb-4 text-center">Çözmek istediğiniz mat seviyesini seçin:</p>
+    
+    <div class="flex flex-col w-full gap-3">
+        <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded transition-colors" onclick="startPuzzleLevel(1)">
+            1 Hamlede Mat
+        </button>
+        <button class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded transition-colors" onclick="startPuzzleLevel(2)">
+            2 Hamlede Mat
+        </button>
+        <button class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded transition-colors" onclick="startPuzzleLevel(3)">
+            3 Hamlede Mat
+        </button>
+        <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded mt-4 transition-colors" onclick="returnToLobby()">
+            Ana Menüye Dön
+        </button>
     </div>
 </div>
 
