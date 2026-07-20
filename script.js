@@ -1295,38 +1295,25 @@ function minimax(depth, isMaximizingPlayer, alpha = -Infinity, beta = Infinity) 
         return minEval;
     }
 }
-// Bulmaca ekranını açma mantığı
-const btnOpenPuzzle = document.getElementById('btn-open-puzzle');
-const lobbyScreen = document.getElementById('lobby-screen');
-const puzzleScreen = document.getElementById('puzzleScreen');
 
-if (btnOpenPuzzle) {
-    btnOpenPuzzle.addEventListener('click', () => {
-        lobbyScreen.classList.add('hidden'); // Lobiyi kapat
-        puzzleScreen.classList.remove('hidden'); // Bulmaca ekranını aç
-    });
-}
+// Bulmaca ekranını açma mantığı
+//const btnOpenPuzzle = document.getElementById('btn-open-puzzle');
+//const lobbyScreen = document.getElementById('lobby-screen');
+//const puzzleScreen = document.getElementById('puzzleScreen');
+
+//if (btnOpenPuzzle) {
+//    btnOpenPuzzle.addEventListener('click', () => {
+//        lobbyScreen.classList.add('hidden'); // Lobiyi kapat
+//        puzzleScreen.classList.remove('hidden'); // Bulmaca ekranını aç
+//    });
+//}
 
 // Bulmaca ekranından ana menüye dönüş için (HTML'de onclick var, burada tanımlayalım)
-window.returnToLobby = function() {
-    puzzleScreen.classList.add('hidden');
-    lobbyScreen.classList.remove('hidden');
-}
-// --- FEN TEST BLOĞU ---
-// Sayfa açıldıktan 2 saniye sonra tahtayı otomatik olarak FEN konumuna çevirir
-//setTimeout(() => {
-    // Çoban matına 1 hamle kalmış durumun FEN kodu
-//    const testFEN = "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1";
-    
-    // FEN'i bizim 8x8'lik tahta dizisine çevir ve initialBoard'a eşitle
-//    initialBoard = parseFEN(testFEN);
-    
-    // Tahtayı yeni duruma göre tekrar çiz
-//    createBoard();
-    
-    // Test çalıştığında f7 piyonunu vezirle yiyerek Çoban Matı yapabilirsiniz!
-//    console.log("FEN Testi Başarılı: Tahta yeni konuma göre dizildi!");
-//}, 2000);
+//window.returnToLobby = function() {
+//    puzzleScreen.classList.add('hidden');
+//    lobbyScreen.classList.remove('hidden');
+//}
+
 
 // =========================================================================
 // BAŞLANGIÇ ÇALIŞTIRMALARI
