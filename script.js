@@ -57,6 +57,8 @@ let castlingRights = { wK: true, wQ: true, bK: true, bQ: true }; // YENİ: Rok h
 let positionHistory = {}; // Tahta konumlarının kaç kez tekrar ettiğini tutacak obje
 let isPuzzleMode = false; // Sistem bulmaca modunda mı?
 let currentPuzzle = null; // O an çözülen bulmacanın cevap anahtarını tutar
+let puzzlesList = [];       // JSON'dan çekilen tüm bulmacalar
+let currentPuzzleIndex = 0;  // O an kaçıncı bulmacada olduğumuz
 
 if (btnRestart) {
     btnRestart.addEventListener('click', async () => {
@@ -303,6 +305,45 @@ function parseFEN(fenString) {
     }
     return newBoard;
 }
+// Harici JSON dosyasından bulmacaları çeken fonksiyon
+async function fetchPuzzles() {
+    try {
+        const response = await fetch('puzzles.json');
+        puzzlesList = await response.json();
+        console.log(`${puzzlesList.length} adet bulmaca başarıyla yüklendi!`);
+    } catch (error) {
+        console.error("Bulmacalar yüklenirken bir hata oluştu:", error);
+    }
+}
+
+// Seçilen indeksteki bulmacayı tahtaya yükleyen fonksiyon
+function loadPuzzle(index) {
+    if (!puzzlesList || puzzlesList.length === 0 || !puzzlesList[index]) return;
+
+    isPuzzleMode = true;
+    isBotPlay = false;
+    isLocalPlay = false;
+    currentPuzzleIndex = index;
+    currentPuzzle = puzzlesList[index];
+
+    // FEN kodunu tahtaya dök
+    initialBoard = parseFEN(currentPuzzle.fen);
+    currentPlayer = currentPuzzle.turn || 'white';
+    myColor = currentPlayer; // Hakemin tıklamaları doğru okuması için
+
+    // Ekranı güncelle
+    if (lobbyScreen) lobbyScreen.classList.add('hidden');
+    if (roomCodeDisplay && roomCodeText) {
+        roomCodeText.textContent = `🧩 Bulmaca #${currentPuzzle.id}: ${currentPuzzle.title}`;
+        roomCodeDisplay.classList.remove('hidden');
+    }
+
+    createBoard();
+    updateTurnIndicator();
+}
+
+// Sayfa yüklendiğinde bulmaca listesini arka planda hazırla
+fetchPuzzles();
 // =========================================================================
 // 1. TAHTA OLUŞTURMA VE ÇİZİM
 // =========================================================================
@@ -465,11 +506,17 @@ function handleSquareClick(event) {
                             movePiece(row, col);
                             
                             // Mat veya hamle animasyonu bittikten hemen sonra uyarı ver
+                            // Hakem doğru hamleyi onayladıktan sonra:
                             setTimeout(() => {
                                 alert("Tebrikler! Doğru hamleyi buldunuz.");
-                                // Burada bir sonraki bulmacaya geçiş fonksiyonu çağrılacak
+                                
+                                // Bir sonraki bulmacaya geç
+                                if (currentPuzzleIndex + 1 < puzzlesList.length) {
+                                    loadPuzzle(currentPuzzleIndex + 1);
+                                } else {
+                                    alert("Muhteşem! Tüm bulmacaları tamamladınız!");
+                                }
                             }, 300);
-                            
                         } else {
                             // YANLIŞ HAMLE! Taşı oynatmadan seçimi iptal et
                             alert("Yanlış hamle! Lütfen tekrar deneyin.");
