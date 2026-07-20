@@ -123,7 +123,6 @@ if (btnRestart) {
 // =========================================================================
 // 0. LOBİ VE ODA YÖNETİMİ
 // =========================================================================
-const lobbyScreen = document.getElementById('lobby-screen');
 const btnCreateRoom = document.getElementById('btn-create-room');
 const btnJoinRoom = document.getElementById('btn-join-room');
 const inputRoomCode = document.getElementById('input-room-code');
