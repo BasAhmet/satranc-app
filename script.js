@@ -344,6 +344,31 @@ function loadPuzzle(index) {
 
 // Sayfa yüklendiğinde bulmaca listesini arka planda hazırla
 fetchPuzzles();
+
+let currentLevelPuzzles = []; // Sadece seçilen seviyenin bulmacalarını tutar
+
+// Seçilen seviyedeki bulmacaları başlatır
+function startPuzzleLevel(level) {
+    // Tüm bulmacalar içinden sadece seçilen seviyeyi filtrele
+    currentLevelPuzzles = puzzlesList.filter(p => p.level === level);
+    
+    if (currentLevelPuzzles.length === 0) {
+        alert("Bu seviyede henüz bulmaca eklenmemiş!");
+        return;
+    }
+
+    // Ekranları ayarla
+    document.getElementById('puzzleScreen').classList.add('hidden');
+    
+    // İlk bulmacadan (index 0) başlat
+    loadPuzzle(0, currentLevelPuzzles);
+}
+
+// Ana menüye dönüş fonksiyonu
+function returnToLobby() {
+    document.getElementById('puzzleScreen').classList.add('hidden');
+    document.getElementById('lobbyScreen').classList.remove('hidden');
+}
 // =========================================================================
 // 1. TAHTA OLUŞTURMA VE ÇİZİM
 // =========================================================================
