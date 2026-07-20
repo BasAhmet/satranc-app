@@ -55,6 +55,8 @@ let isBotPlay = false; // YENİ: Bota karşı oynama modu kontrolü
 let isGameActive = true; // Oyunun oynanabilir durumda olup olmadığını kontrol eder
 let castlingRights = { wK: true, wQ: true, bK: true, bQ: true }; // YENİ: Rok haklarını (Hafıza) tutan değişken
 let positionHistory = {}; // Tahta konumlarının kaç kez tekrar ettiğini tutacak obje
+let isPuzzleMode = false; // Sistem bulmaca modunda mı?
+let currentPuzzle = null; // O an çözülen bulmacanın cevap anahtarını tutar
 
 if (btnRestart) {
     btnRestart.addEventListener('click', async () => {
@@ -449,9 +451,34 @@ function handleSquareClick(event) {
                 
                 initialBoard[selectedSquare.row][selectedSquare.col] = pieceToMove;
                 initialBoard[row][col] = originalTargetPiece;
-
+                
                 if (isSafe) {
-                    movePiece(row, col);
+                    // YENİ: BULMACA HAKEMİ
+                    if (isPuzzleMode) {
+                        // Yapılan hamle, cevap anahtarındaki koordinatlarla eşleşiyor mu?
+                        if (selectedSquare.row === currentPuzzle.startRow && 
+                            selectedSquare.col === currentPuzzle.startCol && 
+                            row === currentPuzzle.targetRow && 
+                            col === currentPuzzle.targetCol) {
+                            
+                            // DOĞRU HAMLE! Taşı oynat ve tebrik et
+                            movePiece(row, col);
+                            
+                            // Mat veya hamle animasyonu bittikten hemen sonra uyarı ver
+                            setTimeout(() => {
+                                alert("Tebrikler! Doğru hamleyi buldunuz.");
+                                // Burada bir sonraki bulmacaya geçiş fonksiyonu çağrılacak
+                            }, 300);
+                            
+                        } else {
+                            // YANLIŞ HAMLE! Taşı oynatmadan seçimi iptal et
+                            alert("Yanlış hamle! Lütfen tekrar deneyin.");
+                            clearSelection();
+                        }
+                    } else {
+                        // Bulmaca modunda değilsek normal maça devam et
+                        movePiece(row, col);
+                    }
                 } else {
                     clearSelection();
                 }
