@@ -1295,6 +1295,23 @@ function minimax(depth, isMaximizingPlayer, alpha = -Infinity, beta = Infinity) 
         return minEval;
     }
 }
+// Bulmaca ekranını açma mantığı
+const btnOpenPuzzle = document.getElementById('btn-open-puzzle');
+const lobbyScreen = document.getElementById('lobby-screen');
+const puzzleScreen = document.getElementById('puzzleScreen');
+
+if (btnOpenPuzzle) {
+    btnOpenPuzzle.addEventListener('click', () => {
+        lobbyScreen.classList.add('hidden'); // Lobiyi kapat
+        puzzleScreen.classList.remove('hidden'); // Bulmaca ekranını aç
+    });
+}
+
+// Bulmaca ekranından ana menüye dönüş için (HTML'de onclick var, burada tanımlayalım)
+window.returnToLobby = function() {
+    puzzleScreen.classList.add('hidden');
+    lobbyScreen.classList.remove('hidden');
+}
 // --- FEN TEST BLOĞU ---
 // Sayfa açıldıktan 2 saniye sonra tahtayı otomatik olarak FEN konumuna çevirir
 //setTimeout(() => {
