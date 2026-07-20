@@ -23,6 +23,16 @@ const botDifficultySelect = document.getElementById('bot-difficulty');
 let botLevel = 1; // Seçilen bot seviyesini hafızada tutacak değişken
 const btnUndo = document.getElementById('btn-undo');
 let undoStack = []; // Geçmiş hamlelerin durumlarını tutacak yığıt
+const btnOpenPuzzle = document.getElementById('btn-open-puzzle');
+const puzzleScreen = document.getElementById('puzzleScreen');
+const lobbyScreen = document.getElementById('lobby-screen');
+
+if (btnOpenPuzzle) {
+    btnOpenPuzzle.addEventListener('click', () => {
+        lobbyScreen.classList.add('hidden'); 
+        puzzleScreen.classList.remove('hidden'); 
+    });
+}
 
 let moveNumber = 1;
 let currentMoveRow = null;
@@ -348,7 +358,7 @@ fetchPuzzles();
 let currentLevelPuzzles = []; // Sadece seçilen seviyenin bulmacalarını tutar
 
 // Seçilen seviyedeki bulmacaları başlatır
-function startPuzzleLevel(level) {
+window.startPuzzleLevel = function(level) {
     // Tüm bulmacalar içinden sadece seçilen seviyeyi filtrele
     currentLevelPuzzles = puzzlesList.filter(p => p.level === level);
     
@@ -362,8 +372,13 @@ function startPuzzleLevel(level) {
     
     // İlk bulmacadan (index 0) başlat
     loadPuzzle(0, currentLevelPuzzles);
-}
+};
 
+// Ana menüye dönüş fonksiyonu
+window.returnToLobby = function() {
+    document.getElementById('puzzleScreen').classList.add('hidden');
+    document.getElementById('lobby-screen').classList.remove('hidden'); // BURASI TİRELİ OLMALI
+};
 // Ana menüye dönüş fonksiyonu
 function returnToLobby() {
     document.getElementById('puzzleScreen').classList.add('hidden');
