@@ -1,24 +1,26 @@
 [
   {
-    "id": 1,
+    "id": "00008",
     "level": 1,
-    "title": "1 Hamlede Mat (Çoban Matı Teması)",
-    "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1",
-    "turn": "white",
-    "startRow": 5,
-    "startCol": 5,
-    "targetRow": 1,
-    "targetCol": 5
+    "rating": 900,
+    "fen": "r6k/pp2r2p/4Rp1Q/3p4/8/1N1P2R1/PqP2bPP/7K b - - 0 24",
+    "moves": ["f2g3", "e6e7", "b2b1", "b3c1", "b1c1", "h6c1"],
+    "themes": ["crushing", "hangingPiece", "long"]
   },
   {
-    "id": 2,
+    "id": "0009B",
     "level": 1,
-    "title": "1 Hamlede Mat (Arka Yatay Matı)",
-    "fen": "6k1/5ppp/8/8/8/8/8/1R4K1 w - - 0 1",
-    "turn": "white",
-    "startRow": 7,
-    "startCol": 1,
-    "targetRow": 0,
-    "targetCol": 1
+    "rating": 1050,
+    "fen": "r1bq1rk1/pp2bppp/2n5/3p4/3N4/1B6/PPP2PPP/R1BQR1K1 w - - 1 12",
+    "moves": ["e1e7", "c6e7", "c1g5", "f7f6"],
+    "themes": ["advantage", "middlegame", "short"]
+  },
+  {
+    "id": "000aY",
+    "level": 2,
+    "rating": 1450,
+    "fen": "r4rk1/pp3ppp/2n1b3/q1pp4/8/1BNP1N2/PPP2QPP/R1B3K1 w - - 1 14",
+    "moves": ["f3g5", "c5c4", "d3c4", "d5c4"],
+    "themes": ["advantage", "middlegame", "short"]
   }
 ]
