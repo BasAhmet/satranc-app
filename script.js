@@ -351,23 +351,29 @@ async function fetchPuzzles() {
 
 // Seçilen indeksteki bulmacayı tahtaya yükleyen fonksiyon
 function loadPuzzle(index) {
-    if (!puzzlesList || puzzlesList.length === 0 || !puzzlesList[index]) return;
+    // ARTIK puzzlesList DEĞİL, SEÇİLEN SEVİYENİN LİSTESİ OLAN currentLevelPuzzles KULLANILIYOR
+    if (!currentLevelPuzzles || currentLevelPuzzles.length === 0 || !currentLevelPuzzles[index]) return;
 
     isPuzzleMode = true;
     isBotPlay = false;
     isLocalPlay = false;
     currentPuzzleIndex = index;
-    currentPuzzle = puzzlesList[index];
+    currentPuzzle = currentLevelPuzzles[index]; // FİLTRELENMİŞ LİSTEDEN ÇEK
 
     // FEN kodunu tahtaya dök
     initialBoard = parseFEN(currentPuzzle.fen);
-    currentPlayer = currentPuzzle.turn || 'white';
-    myColor = currentPlayer; // Hakemin tıklamaları doğru okuması için
+    
+    // FEN KODUNDAN HAMLE SIRASINI KESİN OLARAK OKU (Beyaz mı Siyah mı?)
+    const fenParts = currentPuzzle.fen.split(' ');
+    const turnFromFen = fenParts[1] === 'b' ? 'black' : 'white';
+    
+    currentPlayer = currentPuzzle.turn || turnFromFen; // Öncelik JSON'da, yoksa FEN'den al
+    myColor = currentPlayer; 
 
     // Ekranı güncelle
     if (lobbyScreen) lobbyScreen.classList.add('hidden');
     if (roomCodeDisplay && roomCodeText) {
-        roomCodeText.textContent = `🧩 Bulmaca #${currentPuzzle.id}: ${currentPuzzle.title}`;
+        roomCodeText.textContent = `🧩 Bulmaca #${currentPuzzle.id}: Seviye ${currentPuzzle.level}`;
         roomCodeDisplay.classList.remove('hidden');
     }
 
