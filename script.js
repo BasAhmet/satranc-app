@@ -70,6 +70,30 @@ let currentPuzzle = null; // O an çözülen bulmacanın cevap anahtarını tuta
 let puzzlesList = [];       // JSON'dan çekilen tüm bulmacalar
 let currentPuzzleIndex = 0;  // O an kaçıncı bulmacada olduğumuz
 
+// JSON dosyasını okuma fonksiyonu
+async function loadPuzzlesData() {
+    try {
+        // puzzles.json dosyasını çekiyoruz
+        const response = await fetch('./puzzles.json');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP hatası! Durum: ${response.status}`);
+        }
+        
+        // Gelen veriyi JSON olarak parse edip listemize atıyoruz
+        puzzlesList = await response.json();
+        console.log(`${puzzlesList.length} adet bulmaca başarıyla yüklendi.`);
+        
+    } catch (error) {
+        console.error("Bulmaca verileri yüklenirken bir hata oluştu:", error);
+    }
+}
+
+// Sayfa yüklendiğinde bulmacaları hafızaya al
+document.addEventListener('DOMContentLoaded', () => {
+    loadPuzzlesData();
+});
+
 if (btnRestart) {
     btnRestart.addEventListener('click', async () => {
         castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
