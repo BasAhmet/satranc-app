@@ -4,7 +4,7 @@
     "level": 1,
     "rating": 850,
     "fen": "6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1",
-    "moves": ["a1a8"],
+    "moves": ["A1A8"],
     "themes": ["backRankMate", "mate", "mateIn1"]
   },
   {
