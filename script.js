@@ -78,6 +78,43 @@ let currentPuzzle = null; // O an çözülen bulmacanın cevap anahtarını tuta
 let puzzlesList = [];       // JSON'dan çekilen tüm bulmacalar
 let currentPuzzleIndex = 0;  // O an kaçıncı bulmacada olduğumuz
 
+async function fetchPuzzleForLevel(level) {
+    // 1. O seviyeye ait maksimum dosya sayısını bul
+    const maxFiles = puzzleFilesConfig[level];
+    if (!maxFiles) {
+        console.error("Geçersiz seviye:", level);
+        return;
+    }
+
+    // 2. 1 ile maxFiles arasında rastgele bir dosya numarası seç
+    const randomFileNumber = Math.floor(Math.random() * maxFiles) + 1;
+    
+    // Klasör yolunu oluştur (resim_3.png'deki "puzzle" klasörü)
+    const fileName = `./puzzle/${level}hamlede_${randomFileNumber}.json`;
+
+    try {
+        // Yükleniyor efekti eklenebilir
+        console.log(`${fileName} dosyasından bulmaca çekiliyor...`);
+
+        // 3. Dosyayı sunucudan (veya yerelden) çek
+        const response = await fetch(fileName);
+        if (!response.ok) throw new Error("Dosya bulunamadı: " + fileName);
+        
+        const puzzlesList = await response.json();
+
+        // 4. Çekilen 1000'lik dosyanın içinden rastgele BİR bulmaca seç
+        const randomPuzzleIndex = Math.floor(Math.random() * puzzlesList.length);
+        const selectedPuzzle = puzzlesList[randomPuzzleIndex];
+
+        // 5. Seçilen bulmacayı tahtaya kur
+        loadSinglePuzzle(selectedPuzzle); 
+        
+    } catch (error) {
+        console.error("Bulmaca yüklenirken hata oluştu:", error);
+        alert("Bulmaca yüklenemedi. Lütfen internet bağlantınızı kontrol edin veya tekrar deneyin.");
+    }
+}
+
 // JSON dosyasını okuma fonksiyonu
 async function loadPuzzlesData() {
     try {
