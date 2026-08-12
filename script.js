@@ -26,6 +26,14 @@ let undoStack = []; // Geçmiş hamlelerin durumlarını tutacak yığıt
 const btnOpenPuzzle = document.getElementById('btn-open-puzzle');
 const puzzleScreen = document.getElementById('puzzleScreen');
 const lobbyScreen = document.getElementById('lobby-screen');
+// Hangi seviyeden toplam kaç dosya olduğunu sisteme söylüyoruz
+const puzzleFilesConfig = {
+    1: 895, // 1hamlede_1.json'dan 1hamlede_895.json'a kadar
+    2: 805, // 2hamlede_1.json'dan 2hamlede_805.json'a kadar
+    3: 196,
+    4: 29,
+    5: 7
+};
 
 if (btnOpenPuzzle) {
     btnOpenPuzzle.addEventListener('click', () => {
