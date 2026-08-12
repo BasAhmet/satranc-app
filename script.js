@@ -31,8 +31,14 @@ const lobbyScreen = document.getElementById('lobby-screen');
 const puzzleFilesConfig = {
     1: 895,
     2: 805,
-    3: 196
+    3: 196,
+    4: 29,
+    5: 7
 };
+
+// Bu iki yeni değişkeni kodun üst kısmında uygun bir yere ekleyin:
+let puzzleMoveIndex = 1;
+let currentPuzzleLevel = 1;
 
 if (btnOpenPuzzle) {
     btnOpenPuzzle.addEventListener('click', () => {
@@ -113,36 +119,27 @@ function loadSinglePuzzle(puzzleObj) {
     isLocalPlay = false;
     currentPuzzle = puzzleObj;
     isGameActive = true; 
+    puzzleMoveIndex = 1; // YENİ: Her bulmacada hamle sayacını 1'den başlat
 
     // 1. FEN kodunu tahtaya dök
     initialBoard = parseFEN(currentPuzzle.fen);
     
     // 2. Lichess bulmacaları rakibin yaptığı hatalı hamleyle başlar!
-    if (currentPuzzle.moves && currentPuzzle.moves.length >= 2) {
-        // Rakibin hamlesini bul (Örn: 'e2e4') ve sayılara çevir
+    if (currentPuzzle.moves && currentPuzzle.moves.length > 0) {
         const opponentMove = currentPuzzle.moves[0]; 
         const oStartCol = opponentMove.charCodeAt(0) - 97;
         const oStartRow = 8 - parseInt(opponentMove[1]);
         const oTargetCol = opponentMove.charCodeAt(2) - 97;
         const oTargetRow = 8 - parseInt(opponentMove[3]);
 
-        // Rakibin hamlesini tahtada otomatik olarak oynat
         const piece = initialBoard[oStartRow][oStartCol];
         initialBoard[oTargetRow][oTargetCol] = piece;
         initialBoard[oStartRow][oStartCol] = '';
         
-        // Ekranda son hamle efekti çıksın diye lastMove değişkenine kaydet
         lastMove = { piece: piece, startRow: oStartRow, startCol: oStartCol, targetRow: oTargetRow, targetCol: oTargetCol };
-
-        // 3. SENİN yapman gereken mat hamlesini (Bulmacanın asıl cevabını) sisteme tanıt
-        const playerMove = currentPuzzle.moves[1]; 
-        currentPuzzle.startCol = playerMove.charCodeAt(0) - 97;
-        currentPuzzle.startRow = 8 - parseInt(playerMove[1]);
-        currentPuzzle.targetCol = playerMove.charCodeAt(2) - 97;
-        currentPuzzle.targetRow = 8 - parseInt(playerMove[3]);
     }
 
-    // 4. Sırayı doğru oyuncuya geçir (Rakip oynadıktan sonra sıra bize geçer)
+    // 3. Sırayı doğru oyuncuya geçir
     const fenParts = currentPuzzle.fen.split(' ');
     const turnBeforeOpponentMove = fenParts[1] === 'b' ? 'black' : 'white';
     currentPlayer = turnBeforeOpponentMove === 'white' ? 'black' : 'white'; 
@@ -151,7 +148,8 @@ function loadSinglePuzzle(puzzleObj) {
     // Arayüzleri gizle ve göster
     if (lobbyScreen) lobbyScreen.classList.add('hidden');
     if (roomCodeDisplay && roomCodeText) {
-        roomCodeText.textContent = `🧩 ${currentPuzzle.level} Hamlede Mat (Bulmaca #${currentPuzzle.id})`;
+        // YENİ: Seçilen zorluk seviyesini başlığa yazdır
+        roomCodeText.textContent = `🧩 ${currentPuzzleLevel} Hamlede Mat (Bulmaca #${currentPuzzle.id})`;
         roomCodeDisplay.classList.remove('hidden');
     }
     document.getElementById('puzzleScreen').classList.add('hidden');
@@ -161,6 +159,7 @@ function loadSinglePuzzle(puzzleObj) {
 }
 
 window.startPuzzleLevel = function(level) {
+    currentPuzzleLevel = level; // YENİ: Seçilen seviyeyi hafızaya al
     document.getElementById('puzzleScreen').classList.add('hidden');
     fetchPuzzleForLevel(level);
 };
@@ -487,7 +486,7 @@ function handlePromotionSelection(chosenPiece, targetRow, targetCol) {
 // 2. ETKİLEŞİM VE HAMLE YÖNETİMİ
 // =========================================================================
 function handleSquareClick(event) {
-    if (!isGameActive) return; // OYUN BİTTİYSE TIKLAMALARI DURDUR
+    if (!isGameActive) return; 
     const square = event.currentTarget;
     const row = parseInt(square.dataset.row);
     const col = parseInt(square.dataset.col);
@@ -520,31 +519,45 @@ function handleSquareClick(event) {
                 initialBoard[row][col] = originalTargetPiece;
                 
                 if (isSafe) {
-                    // YENİ: BULMACA HAKEMİ
+                    // YENİ: ÇOK HAMLELİ BULMACA HAKEMİ
                     if (isPuzzleMode) {
-                        // Yapılan hamle, cevap anahtarındaki koordinatlarla eşleşiyor mu?
-                        if (selectedSquare.row === currentPuzzle.startRow && 
-                            selectedSquare.col === currentPuzzle.startCol && 
-                            row === currentPuzzle.targetRow && 
-                            col === currentPuzzle.targetCol) {
+                        const expectedMove = currentPuzzle.moves[puzzleMoveIndex];
+                        const expectedStartCol = expectedMove.charCodeAt(0) - 97;
+                        const expectedStartRow = 8 - parseInt(expectedMove[1]);
+                        const expectedTargetCol = expectedMove.charCodeAt(2) - 97;
+                        const expectedTargetRow = 8 - parseInt(expectedMove[3]);
+
+                        if (selectedSquare.row === expectedStartRow && 
+                            selectedSquare.col === expectedStartCol && 
+                            row === expectedTargetRow && 
+                            col === expectedTargetCol) {
                             
-                            // DOĞRU HAMLE! Taşı oynat ve tebrik et
+                            // DOĞRU HAMLE!
                             movePiece(row, col);
-                            
-                            // Mat veya hamle animasyonu bittikten hemen sonra uyarı ver
-                            // Hakem doğru hamleyi onayladıktan sonra:
-                            setTimeout(() => {
-                                alert("Tebrikler! Doğru hamleyi buldunuz.");
-                                
-                                // Bir sonraki bulmacaya geç
-                                if (currentPuzzleIndex + 1 < puzzlesList.length) {
-                                    loadPuzzle(currentPuzzleIndex + 1);
-                                } else {
-                                    alert("Muhteşem! Tüm bulmacaları tamamladınız!");
-                                }
-                            }, 300);
+                            puzzleMoveIndex++; 
+
+                            if (puzzleMoveIndex >= currentPuzzle.moves.length) {
+                                // Bulmaca Bitti! Yeni seviyeye geçiş yapıyoruz.
+                                setTimeout(() => {
+                                    alert("Tebrikler! Doğru hamleyi buldunuz. Yeni bulmaca yükleniyor...");
+                                    fetchPuzzleForLevel(currentPuzzleLevel);
+                                }, 400);
+                            } else {
+                                // Bulmaca Devam Ediyor (Siyahın zorunlu hamlesini otomatik oynat)
+                                setTimeout(() => {
+                                    const oppMove = currentPuzzle.moves[puzzleMoveIndex];
+                                    const oStartCol = oppMove.charCodeAt(0) - 97;
+                                    const oStartRow = 8 - parseInt(oppMove[1]);
+                                    const oTargetCol = oppMove.charCodeAt(2) - 97;
+                                    const oTargetRow = 8 - parseInt(oppMove[3]);
+                                    
+                                    selectedSquare = { row: oStartRow, col: oStartCol };
+                                    movePiece(oTargetRow, oTargetCol);
+                                    
+                                    puzzleMoveIndex++; 
+                                }, 600);
+                            }
                         } else {
-                            // YANLIŞ HAMLE! Taşı oynatmadan seçimi iptal et
                             alert("Yanlış hamle! Lütfen tekrar deneyin.");
                             clearSelection();
                         }
