@@ -78,386 +78,94 @@ let currentPuzzle = null; // O an çözülen bulmacanın cevap anahtarını tuta
 let puzzlesList = [];       // JSON'dan çekilen tüm bulmacalar
 let currentPuzzleIndex = 0;  // O an kaçıncı bulmacada olduğumuz
 
+// =========================================================================
+// BULMACA YÖNETİMİ (Chunked JSON Fetching)
+// =========================================================================
+
+// Rastgele bir dosya seçip içinden 1 bulmaca çeken ana fonksiyon
 async function fetchPuzzleForLevel(level) {
-    // 1. O seviyeye ait maksimum dosya sayısını bul
     const maxFiles = puzzleFilesConfig[level];
     if (!maxFiles) {
         console.error("Geçersiz seviye:", level);
         return;
     }
 
-    // 2. 1 ile maxFiles arasında rastgele bir dosya numarası seç
+    // 1 ile maxFiles arasında rastgele bir dosya numarası seç
     const randomFileNumber = Math.floor(Math.random() * maxFiles) + 1;
-    
-    // Klasör yolunu oluştur (resim_3.png'deki "puzzle" klasörü)
     const fileName = `./puzzle/${level}hamlede_${randomFileNumber}.json`;
 
     try {
-        // Yükleniyor efekti eklenebilir
         console.log(`${fileName} dosyasından bulmaca çekiliyor...`);
 
-        // 3. Dosyayı sunucudan (veya yerelden) çek
         const response = await fetch(fileName);
         if (!response.ok) throw new Error("Dosya bulunamadı: " + fileName);
         
         const puzzlesList = await response.json();
 
-        // 4. Çekilen 1000'lik dosyanın içinden rastgele BİR bulmaca seç
+        // Çekilen 1000'lik dosyanın içinden rastgele BİR bulmaca seç
         const randomPuzzleIndex = Math.floor(Math.random() * puzzlesList.length);
         const selectedPuzzle = puzzlesList[randomPuzzleIndex];
 
-        // 5. Seçilen bulmacayı tahtaya kur
+        // Seçilen bulmacayı tahtaya kur
         loadSinglePuzzle(selectedPuzzle); 
         
     } catch (error) {
         console.error("Bulmaca yüklenirken hata oluştu:", error);
-        alert("Bulmaca yüklenemedi. Lütfen internet bağlantınızı kontrol edin veya tekrar deneyin.");
+        alert("Bulmaca yüklenemedi. Lütfen internet bağlantınızı kontrol edin.");
     }
 }
 
-// JSON dosyasını okuma fonksiyonu
-async function loadPuzzlesData() {
-    try {
-        // puzzles.json dosyasını çekiyoruz
-        const response = await fetch('./puzzles.json');
-        
-        if (!response.ok) {
-            throw new Error(`HTTP hatası! Durum: ${response.status}`);
-        }
-        
-        // Gelen veriyi JSON olarak parse edip listemize atıyoruz
-        puzzlesList = await response.json();
-        console.log(`${puzzlesList.length} adet bulmaca başarıyla yüklendi.`);
-        
-    } catch (error) {
-        console.error("Bulmaca verileri yüklenirken bir hata oluştu:", error);
-    }
-}
-
-// Sayfa yüklendiğinde bulmacaları hafızaya al
-document.addEventListener('DOMContentLoaded', () => {
-    loadPuzzlesData();
-});
-
-if (btnRestart) {
-    btnRestart.addEventListener('click', async () => {
-        castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
-
-        // YENİ EKLENEN SATIR: Geçmiş oyunun konum hafızasını tamamen siler
-        positionHistory = {};
-        isGameActive = true; // YENİ OYUNDA KİLİDİ AÇ
-        // Eğer bir odaya henüz girilmediyse buton çalışmasın
-        if (!currentRoomId && !isLocalPlay && !isBotPlay) return; 
-
-        // Yanlışlıkla basmalara karşı küçük bir onay alalım
-        const onay = confirm("Oyunu sıfırlayıp yeni bir maça başlamak istediğinize emin misiniz?");
-        if (!onay) return;
-
-        // Tahtanın ilk (başlangıç) halini yepyeni bir dizi olarak oluşturuyoruz
-        const startingBoard = [
-            ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
-            ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
-            ['', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', ''],
-            ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
-            ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
-        ];
-
-        if (isLocalPlay || isBotPlay) {
-            // Yerel oyunda direkt lokal değişkenleri sıfırla
-            initialBoard = startingBoard;
-            currentPlayer = 'white';
-            moveHistoryList = [];
-            lastMove = null; // YENİ: Yerel maç rövanşında sıfırla
-            createBoard();
-            updateTurnIndicator();
-            renderMoveHistory();
-            console.log("Yerel/Bot maçı başarıyla sıfırlandı!");
-        } else {
-            // Online oyunda Firebase'i sıfırla
-            const gameRef = doc(db, "games", currentRoomId);
-            await setDoc(gameRef, {
-                board: JSON.stringify(startingBoard),
-                turn: 'white',
-                moveCount: 1,
-                history: [],
-                lastMove: null // YENİ: Online maç rövanşında sıfırla
-            }, { merge: true }); 
-        }
-    });
-}
-
-// =========================================================================
-// 0. LOBİ VE ODA YÖNETİMİ
-// =========================================================================
-const btnCreateRoom = document.getElementById('btn-create-room');
-const btnJoinRoom = document.getElementById('btn-join-room');
-const inputRoomCode = document.getElementById('input-room-code');
-const btnLocalPlay = document.getElementById('btn-local-play');
-const btnBotPlay = document.getElementById('btn-bot-play');
-
-// BOTA KARŞI MAÇ BAŞLATMA BUTTONU
-if (btnBotPlay) {
-    btnBotPlay.addEventListener('click', () => {
-        castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
-        if (btnUndo) btnUndo.classList.add('hidden');
-        positionHistory = {}; 
-        isGameActive = true; 
-        isBotPlay = true;
-        isLocalPlay = false;
-
-        // 1. ADIM: Kullanıcının seçtiği rengi al (HTML'e ekleyeceğiniz select'in ID'sini kullanın)
-        const colorSelect = document.getElementById('botColorSelect');
-        myColor = colorSelect ? colorSelect.value : 'white'; 
-        
-        botLevel = parseInt(botDifficultySelect.value) || 2;
-        
-        lobbyScreen.classList.add('hidden');
-        
-        if (roomCodeDisplay && roomCodeText) {
-            roomCodeText.textContent = `🤖 Bot Maçı (Seviye ${botLevel} - ${myColor === 'white' ? 'Beyaz' : 'Siyah'})`;
-            roomCodeDisplay.classList.remove('hidden');
-        }
-        
-        currentPlayer = 'white';
-        moveHistoryList = [];
-        lastMove = null;
-        updateTurnIndicator();
-        createBoard();
-
-        // 2. ADIM: Eğer oyuncu Siyah ise Bot (Beyaz) ilk hamleyi yapmalı
-        if (myColor === 'black') {
-            setTimeout(() => {
-                makeBotMove();
-            }, 600);
-        }
-    });
-}
-
-// ODA KURMA (BEYAZ OYUNCU)
-btnCreateRoom.addEventListener('click', async () => {
-    currentRoomId = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 haneli rastgele kod
-    myColor = 'white';
-    // ... lobbyScreen.classList.add('hidden'); satırının hemen altına ekle:
-    if (roomCodeDisplay && roomCodeText) {
-        roomCodeText.textContent = currentRoomId;
-        roomCodeDisplay.classList.remove('hidden');
-    }
-    
-    const gameRef = doc(db, "games", currentRoomId);
-    await setDoc(gameRef, {
-        board: JSON.stringify(initialBoard),
-        turn: 'white',
-        moveCount: 1,
-        playerBlackJoined: false // Siyahın katılıp katılmadığını takip için
-    });
-    
-    lobbyScreen.classList.add('hidden');
-    alert(`ODA KODUNUZ: ${currentRoomId}\n\nArkadaşınıza bu kodu gönderin ve Siyah olarak katılmasını bekleyin.`);
-    listenGame(currentRoomId);
-});
-
-// ODAYA KATILMA (SİYAH OYUNCU)
-btnJoinRoom.addEventListener('click', async () => {
-    const code = inputRoomCode.value.trim().toUpperCase();
-    if (!code) return alert("Lütfen bir oda kodu girin!");
-    // ... lobbyScreen.classList.add('hidden'); satırının hemen altına ekle:
-    if (roomCodeDisplay && roomCodeText) {
-        roomCodeText.textContent = code;
-        roomCodeDisplay.classList.remove('hidden');
-    }
-    
-    const gameRef = doc(db, "games", code);
-    const gameSnap = await getDoc(gameRef);
-    
-    if (gameSnap.exists()) {
-        const data = gameSnap.data();
-        if (!data.playerBlackJoined) {
-            myColor = 'black';
-            currentRoomId = code;
-            
-            // Firebase'de odayı 'Siyah da katıldı' olarak güncelle
-            await setDoc(gameRef, { playerBlackJoined: true }, { merge: true });
-            
-            lobbyScreen.classList.add('hidden');
-            alert(`Odaya Siyah olarak katıldınız! İlk hamle Beyazın.`);
-            listenGame(currentRoomId);
-        } else {
-            alert("Bu oda zaten dolu, iki kişi oynuyor!");
-        }
-    } else {
-        alert("Böyle bir oda kodu bulunamadı!");
-    }
-});
-
-// YEREL MAÇ BAŞLATMA BUTTONU
-if (btnLocalPlay) {
-    btnLocalPlay.addEventListener('click', () => {
-        castlingRights = { wK: true, wQ: true, bK: true, bQ: true };
-        undoStack = [];
-        if (btnUndo) btnUndo.classList.add('hidden');
-        //if (btnUndo) btnUndo.classList.remove('hidden');
-
-        // YENİ EKLENEN SATIR: Konum hafızasını sıfırla
-        positionHistory = {};
-        isGameActive = true; // YENİ OYUNDA KİLİDİ AÇ        
-        isLocalPlay = true;
-        myColor = 'local'; 
-        
-        // YENİ: Kullanıcıya siyah taşların dönüp dönmeyeceğini soruyoruz
-        rotateBlackPieces = confirm("Masada karşılıklı oynayacaksanız, karşı tarafın rahat görmesi için Siyah taşlar ters (rakibinize doğru) dönsün mü?");
-        
-        lobbyScreen.classList.add('hidden'); // Lobiyi gizle
-        
-        // Üst kısımdaki Oda Kodu alanına "Yerel Maç" yazalım
-        if (roomCodeDisplay && roomCodeText) {
-            roomCodeText.textContent = "Yerel Maç 📱";
-            roomCodeDisplay.classList.remove('hidden');
-        }
-        
-        // Oyunu yerel olarak sıfırla ve başlat
-        currentPlayer = 'white';
-        moveHistoryList = [];
-        lastMove = null; // YENİ: Yerel maça başlarken son hamleyi sıfırla
-        updateTurnIndicator();
-        createBoard();
-    });
-}
-if (btnUndo) {
-    btnUndo.addEventListener('click', () => {
-        // Eğer hafızada geri alınacak hamle yoksa veya oyun yerel değilse işlem yapma
-        if (!isLocalPlay || undoStack.length === 0) return;
-
-        // Yığıttan son durumu çıkar (pop) ve değişkenlere geri ata
-        const previousState = undoStack.pop();
-        
-        initialBoard = JSON.parse(previousState.board);
-        currentPlayer = previousState.turn;
-        castlingRights = JSON.parse(previousState.castlingRights);
-        moveHistoryList = [...previousState.history];
-        lastMove = previousState.last;
-        
-        // Eğer mat uyarısı çıkıp oyun kilitlendiyse, geri alınca kilidi aç
-        isGameActive = true; 
-        
-        // Tahtayı ve arayüzü eski haline göre tekrar çiz
-        createBoard();
-        updateTurnIndicator();
-        renderMoveHistory();
-    });
-}
-// FEN kodunu 8x8 tahta dizisine çeviren fonksiyon
-function parseFEN(fenString) {
-    // 8x8 boş bir tahta taslağı oluştur
-    const newBoard = [
-        ['', '', '', '', '', '', '', ''],
-        ['', '', '', '', '', '', '', ''],
-        ['', '', '', '', '', '', '', ''],
-        ['', '', '', '', '', '', '', ''],
-        ['', '', '', '', '', '', '', ''],
-        ['', '', '', '', '', '', '', ''],
-        ['', '', '', '', '', '', '', ''],
-        ['', '', '', '', '', '', '', '']
-    ];
-
-    // FEN kodunun sadece taş dizilimini içeren ilk kısmını alıyoruz
-    const boardPart = fenString.split(' ')[0]; 
-    const rows = boardPart.split('/'); // Satırları bölü (/) işaretinden ayır
-
-    for (let r = 0; r < 8; r++) {
-        let c = 0;
-        for (let i = 0; i < rows[r].length; i++) {
-            const char = rows[r][i];
-            
-            // Eğer karakter bir sayıysa (1-8), o kadar boş kare vardır, atla
-            if (!isNaN(char)) {
-                c += parseInt(char);
-            } else {
-                // Sayı değilse (harfse), taşı tahtaya yerleştir ve bir sonraki sütuna geç
-                newBoard[r][c] = char;
-                c++;
-            }
-        }
-    }
-    return newBoard;
-}
-// Harici JSON dosyasından bulmacaları çeken fonksiyon
-async function fetchPuzzles() {
-    try {
-        const response = await fetch('puzzles.json');
-        puzzlesList = await response.json();
-        console.log(`${puzzlesList.length} adet bulmaca başarıyla yüklendi!`);
-    } catch (error) {
-        console.error("Bulmacalar yüklenirken bir hata oluştu:", error);
-    }
-}
-
-// Seçilen indeksteki bulmacayı tahtaya yükleyen fonksiyon
-function loadPuzzle(index) {
-    // ARTIK puzzlesList DEĞİL, SEÇİLEN SEVİYENİN LİSTESİ OLAN currentLevelPuzzles KULLANILIYOR
-    if (!currentLevelPuzzles || currentLevelPuzzles.length === 0 || !currentLevelPuzzles[index]) return;
+// Çekilen tekil bulmaca objesini alıp tahtaya (oyuna) döken fonksiyon
+function loadSinglePuzzle(puzzleObj) {
+    if (!puzzleObj) return;
 
     isPuzzleMode = true;
     isBotPlay = false;
     isLocalPlay = false;
-    currentPuzzleIndex = index;
-    currentPuzzle = currentLevelPuzzles[index]; // FİLTRELENMİŞ LİSTEDEN ÇEK
+    
+    currentPuzzle = puzzleObj;
+    
+    // Mat uyarısı vs. kilitlendiyse oyunu tekrar aktif et
+    isGameActive = true; 
 
     // FEN kodunu tahtaya dök
     initialBoard = parseFEN(currentPuzzle.fen);
     
-    // FEN KODUNDAN HAMLE SIRASINI KESİN OLARAK OKU (Beyaz mı Siyah mı?)
+    // FEN kodunun sonundan sıranın kimde olduğunu kesin olarak al
     const fenParts = currentPuzzle.fen.split(' ');
     const turnFromFen = fenParts[1] === 'b' ? 'black' : 'white';
     
-    currentPlayer = currentPuzzle.turn || turnFromFen; // Öncelik JSON'da, yoksa FEN'den al
+    currentPlayer = turnFromFen; 
     myColor = currentPlayer; 
 
-    // Ekranı güncelle
+    // Ekran güncellemeleri
     if (lobbyScreen) lobbyScreen.classList.add('hidden');
     if (roomCodeDisplay && roomCodeText) {
-        roomCodeText.textContent = `🧩 Bulmaca #${currentPuzzle.id}: Seviye ${currentPuzzle.level}`;
+        roomCodeText.textContent = `🧩 ${currentPuzzle.level} Hamlede Mat (Bulmaca #${currentPuzzle.id})`;
         roomCodeDisplay.classList.remove('hidden');
     }
+
+    document.getElementById('puzzleScreen').classList.add('hidden');
 
     createBoard();
     updateTurnIndicator();
 }
 
-// Sayfa yüklendiğinde bulmaca listesini arka planda hazırla
-fetchPuzzles();
-
-let currentLevelPuzzles = []; // Sadece seçilen seviyenin bulmacalarını tutar
-
-// Seçilen seviyedeki bulmacaları başlatır
+// HTML'deki "1 Hamlede Mat", "2 Hamlede Mat" butonları tıklandığında tetiklenir
 window.startPuzzleLevel = function(level) {
-    // Tüm bulmacalar içinden sadece seçilen seviyeyi filtrele
-    currentLevelPuzzles = puzzlesList.filter(p => p.level === level);
-    
-    if (currentLevelPuzzles.length === 0) {
-        alert("Bu seviyede henüz bulmaca eklenmemiş!");
-        return;
-    }
-
-    // Ekranları ayarla
+    // Yükleniyor hissiyatı vermek için butona basınca hemen ekranı temizle
     document.getElementById('puzzleScreen').classList.add('hidden');
     
-    // İlk bulmacadan (index 0) başlat
-    loadPuzzle(0, currentLevelPuzzles);
+    // İlgili seviyeden rastgele dosyayı çekme işlemini başlat
+    fetchPuzzleForLevel(level);
 };
 
 // Ana menüye dönüş fonksiyonu
 window.returnToLobby = function() {
     document.getElementById('puzzleScreen').classList.add('hidden');
-    document.getElementById('lobby-screen').classList.remove('hidden'); // BURASI TİRELİ OLMALI
+    document.getElementById('lobby-screen').classList.remove('hidden');
 };
-// Ana menüye dönüş fonksiyonu
-function returnToLobby() {
-    document.getElementById('puzzleScreen').classList.add('hidden');
-    document.getElementById('lobbyScreen').classList.remove('hidden');
-}
+
 // =========================================================================
 // 1. TAHTA OLUŞTURMA VE ÇİZİM
 // =========================================================================
