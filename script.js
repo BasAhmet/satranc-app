@@ -92,7 +92,9 @@ async function fetchPuzzleForLevel(level) {
     }
 
     const randomFileNumber = Math.floor(Math.random() * maxFiles) + 1;
-    const fileName = `./puzzle/${level}hamlede_${randomFileNumber}.json`;
+    
+    // DÜZELTİLEN KISIM: Araya /${level}/ ekledik ki doğru alt klasöre baksın
+    const fileName = `./puzzle/${level}/${level}hamlede_${randomFileNumber}.json`;
 
     try {
         console.log(`${fileName} dosyasından bulmaca çekiliyor...`);
@@ -107,9 +109,10 @@ async function fetchPuzzleForLevel(level) {
         
     } catch (error) {
         console.error("Bulmaca yüklenirken hata oluştu:", error);
-        alert("Bulmaca yüklenemedi. (Eğer projeyi çift tıklayıp tarayıcıda açtıysanız çalışmaz. Vercel'e atmalı veya Live Server kullanmalısınız.)");
+        alert("Bulmaca yüklenemedi. Lütfen internet bağlantınızı kontrol edin veya dosyaların Vercel'e başarıyla yüklendiğinden emin olun.");
     }
 }
+
 
 function loadSinglePuzzle(puzzleObj) {
     if (!puzzleObj) return;
